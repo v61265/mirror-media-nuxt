@@ -3,7 +3,8 @@ import UiH2 from './UiH2.vue'
 import UiH3 from './UiH3.vue'
 import UiAnnotation from './UiAnnotation.vue'
 import UiFigure from './UiFigure.vue'
-import UiInfobox from '~/components/UiInfobox.vue'
+import UiQuoteBy from './UiQuoteBy.vue'
+import UiInfobox from './UiInfobox.vue'
 import UiSlideshow from '~/components/UiSlideshow.vue'
 import UiSlideshowButtonPrev from '~/components/slideshow/UiSlideshowButtonPrev.vue'
 import UiSlideshowButtonNext from '~/components/slideshow/UiSlideshowButtonNext.vue'
@@ -11,8 +12,6 @@ import UiStoryVideo from '~/components/UiStoryVideo.vue'
 import UiEmbeddedCode from '~/components/UiEmbeddedCode.vue'
 import ContainerAudioPlayer from '~/components/audio-player/ContainerAudioPlayer.vue'
 import ContainerParagraphWithAnnotation from '~/components/ContainerParagraphWithAnnotation.vue'
-
-import SvgQuotationMark from '~/assets/quotation-mark-culture-post.svg?inline'
 
 export default {
   name: 'ContentHandler',
@@ -91,22 +90,22 @@ export default {
         const { quoteBy, quote = '' } = content
 
         return (
-          <div class="g-story-quote-by quote-by">
-            <div
-              class="g-story-quote-by__quote"
-              domPropsInnerHTML={quote.replace(/\n/g, '<br>')}
-            />
-            {quoteBy ? (
-              <span class="g-story-quote-by__quote-by">{quoteBy}</span>
-            ) : (
-              ''
-            )}
-          </div>
+          <UiQuoteBy
+            class="quote-by"
+            quote={quote.replace(/\n/g, '<br>')}
+            quoteBy={quoteBy}
+          />
         )
       }
 
       case 'infobox':
-        return <UiInfobox class="infobox" content={content} />
+        return (
+          <UiInfobox
+            class="infobox"
+            title={content.title}
+            content={content.body}
+          />
+        )
 
       case 'embeddedcode':
         return <UiEmbeddedCode class="embedded-code" content={content} />
@@ -169,15 +168,7 @@ export default {
       }
 
       case 'blockquote':
-        return (
-          <div class="quote">
-            <div class="quote-icon-wrapper">
-              <SvgQuotationMark />
-            </div>
-
-            <blockquote domPropsInnerHTML={content}></blockquote>
-          </div>
-        )
+        return <UiQuoteBy class="quote-by" quote={content} />
 
       case 'annotation':
         return (
@@ -355,9 +346,16 @@ $quote-color: #4a90e2;
   }
 
   .infobox {
-    margin-top: 3em;
-    margin-bottom: 3em;
-    padding: 0 18px !important;
+    @include media-breakpoint-up(xl) {
+      width: 720px;
+      position: relative;
+      left: calc((720px - 640px) / 2 * -1);
+    }
+  }
+
+  .quote-by {
+    margin-top: 50px;
+    margin-bottom: 50px;
   }
 
   .embedded-code ::v-deep iframe {
@@ -370,10 +368,6 @@ $quote-color: #4a90e2;
     margin-top: 1em;
     margin-bottom: 1em;
     padding: 0 !important;
-  }
-
-  .quote-by {
-    margin-top: 80px;
   }
 
   .youtube {

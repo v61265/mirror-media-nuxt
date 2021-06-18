@@ -28,9 +28,10 @@
           ref="receiptDOM"
           :setReceiptData="setReceiptData"
         />
+
         <SubscribeFormAcceptPermission
-          :acceptPermission="acceptPermission"
-          :setAcceptPermission="setAcceptPermission"
+          ref="permissionDOM"
+          v-model="acceptPermission"
         />
         <SubscribeFormCreditCard />
 
@@ -38,8 +39,9 @@
       </div>
       <div class="subscribe-form__right">
         <SubscribeFormPerchaseInfo
-          :perchasedPlan="perchasedPlan"
-          :shipPlan="shipPlan"
+          :price="price"
+          :shipping="shipping"
+          :total="total"
         />
       </div>
     </div>
@@ -148,7 +150,7 @@ export default {
       },
     }
   },
-  watch: {
+  computed: {
     perchasedItems() {
       const items = this.perchasedPlan.map((plan) => {
         return {
@@ -159,6 +161,22 @@ export default {
       })
 
       return items
+    },
+    price() {
+      const reducer = (accumulator, currentValue) => {
+        return (
+          accumulator.newPrice * accumulator.count +
+          currentValue.newPrice * currentValue.count
+        )
+      }
+
+      return this.perchasedPlan.reduce(reducer)
+    },
+    shipping() {
+      return this.shipPlan?.cost || 0
+    },
+    total() {
+      return this.price + this.shipping
     },
   },
   methods: {
@@ -171,9 +189,6 @@ export default {
     setOrdererData(newOrdererData) {
       this.ordererData = newOrdererData
     },
-    setAcceptPermission() {
-      this.acceptPermission = !this.acceptPermission
-    },
     setReceiverDataIsSameAsOrderer() {
       this.receiverDataIsSameAsOrderer = !this.receiverDataIsSameAsOrderer
     },
@@ -185,25 +200,31 @@ export default {
         // 商品相關
         items: this.perchasedItems,
         discount_code: this.discount.code,
+
         // 購買者相關
         pur_name: this.ordererData.name,
         pur_cell: this.ordererData.cellphone,
         pur_phone: `${this.ordererData.phone} ${this.ordererData.phoneExt}`,
         pur_addr: this.ordererData.address,
         pur_mail: this.ordererData.email,
+
         // 收貨相關
         rec_name: this.receiverData.name,
         rec_cell: this.receiverData.cellphone,
         rec_phone: `${this.receiverData.phone} ${this.receiverData.phoneExt}`,
         rec_addr: this.receiverData.address,
         rec_remark: '', // TODO
-        delivery: this.shipPlan,
+        delivery: this.shipPlan.name,
+
+        // 付款相關
+        prime_token: '',
+        price_total: this.total,
 
         // 發票相關
-        carrier_type: this.receiptData.receiptPlan,
-        carrier_number: this.receiptData.receiptNumber,
-        carrier_title: this.receiptData.receiptTitle,
-        carrier_ubn: this.receiptData.receiptUbn,
+        carrier_type: this.receiptData.carrierType,
+        carrier_number: this.receiptData.carrierNumber,
+        carrier_title: this.receiptData.carrierTitle,
+        carrier_ubn: this.receiptData.carrierUbn,
       }
     },
     validationPass() {
@@ -223,14 +244,16 @@ export default {
       // check form's validationStatus
       this.ordererData = this.$refs.ordererDOM.check()
       this.receiverData = this.$refs.receiverDOM.check()
+      this.$refs.permissionDOM.check()
       if (this.receiverDataIsSameAsOrderer) {
         this.receiverData = this.ordererData
       }
 
-      if (this.validationPass()) {
+      if (this.validationPass() && this.acceptPermission) {
         const payload = this.getOrderPayload()
-        console.log(payload)
-        // this.proceedOrderPayment(payload)
+
+        // console.log(payload)
+        this.proceedOrderPayment(payload)
       }
     },
   },

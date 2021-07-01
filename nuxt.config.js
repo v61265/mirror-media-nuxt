@@ -248,6 +248,8 @@ module.exports = {
     '~/plugins/vueDirectivesGlobal.js',
     '~/plugins/requests/index.js',
     '~/plugins/user-behavior-log/index.client.js',
+    { src: '~/plugins/vuelidate', ssr: true },
+    '~/plugins/google-optimize-experiments/index.client.js',
   ],
 
   /**
@@ -258,6 +260,14 @@ module.exports = {
     {
       path: `/${API_PATH_FRONTEND}/gcs`,
       handler: '~/api/gcs.js',
+    },
+    {
+      path: `/${API_PATH_FRONTEND}/subscribe-magazine/payload`,
+      handler: '~/api/subscribe-magazine/payload.js',
+    },
+    {
+      path: `/${API_PATH_FRONTEND}/subscribe-magazine/info`,
+      handler: '~/api/subscribe-magazine/info.js',
     },
     {
       path: `/${API_PATH_FRONTEND}/combo`,

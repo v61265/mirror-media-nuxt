@@ -28,7 +28,22 @@
                   class="story__list"
                   @load="handleLoadStoryListRelated"
                 >
+                  <UiStoryListRelatedRedesignWrapper
+                    v-if="
+                      $GOExp &&
+                      $GOExp.isExperimentActive(
+                        'normal-post-related-redesign'
+                      ) &&
+                      $GOExp['normal-post-related-redesign'].variant === '1'
+                    "
+                    :relateds="relateds"
+                    :relatedImages="relatedImages"
+                    :canAdvertise="canAdvertise"
+                    :device="device"
+                    @sendGa="sendGaForClick('related')"
+                  />
                   <UiStoryListRelated
+                    v-else
                     :items="relateds"
                     :images="relatedImages"
                     @sendGa="sendGaForClick('related')"
@@ -195,6 +210,7 @@ import ContainerCulturePost from '~/components/culture-post/ContainerCulturePost
 import ContainerStoryBody from '~/components/ContainerStoryBody.vue'
 import UiAdultContentWarning from '~/components/UiAdultContentWarning.vue'
 import UiStoryListRelated from '~/components/UiStoryListRelated.vue'
+import UiStoryListRelatedRedesignWrapper from '~/components/UiStoryListRelatedRedesignWrapper.vue'
 import FbPage from '~/components/FbPage.vue'
 import UiArticleListAside from '~/components/UiArticleListAside.vue'
 import ContainerGptAd from '~/components/ContainerGptAd.vue'
@@ -241,6 +257,7 @@ export default {
     ContainerStoryBody,
     UiAdultContentWarning,
     UiStoryListRelated,
+    UiStoryListRelatedRedesignWrapper,
     FbPage,
     UiArticleListAside,
 

@@ -4,10 +4,10 @@
       <div class="order-info__order_title">訂單資訊</div>
       <div class="order-info__order_content">
         <SubscribeSuccessOrderInfoContentRow title="訂單編號" :data="orderId" />
-        <SubscribeSuccessOrderInfoContentRow
+        <!-- <SubscribeSuccessOrderInfoContentRow
           title="續訂戶代碼"
           data="窩不知道"
-        />
+        /> -->
         <SubscribeSuccessOrderInfoContentRow
           title="訂單日期"
           :data="orderDate"
@@ -53,16 +53,17 @@
           title="通訊地址"
           :data="orderInfo.rec_addr"
         />
-        <SubscribeSuccessOrderInfoContentRow
+        <!-- <SubscribeSuccessOrderInfoContentRow
           title="派送備註"
           data="orderInfo.rec_remark"
-        />
+        /> -->
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import moment from 'moment'
 import SubscribeSuccessOrderInfoContentRow from '~/components/SubscribeSuccessOrderInfoContentRow.vue'
 
 export default {
@@ -85,10 +86,20 @@ export default {
   },
   computed: {
     orderDate() {
-      return new Date().format('yyyy-MM-dd')
+      const now = new Date()
+      return moment(now).format('YYYY-MM-DD')
     },
     fileterPerchasedPlan() {
-      return this.orderInfo.items.filter((item) => item.amount)
+      const itemList = [
+        {
+          id: 0,
+          name: this.orderInfo.item_desc,
+          price: this.orderInfo.price,
+          amount: this.orderInfo.amount,
+        },
+      ]
+
+      return itemList
     },
     shipCost() {
       if (this.orderInfo.delivery === '限時專送') return 0
@@ -107,7 +118,7 @@ export default {
   min-height: 50vh;
   color: #4a4a4a;
   font-size: 15px;
-  font-family: PingFangTC;
+  font-family: 'PingFang TC';
 
   & > * + * {
     margin-top: 42px;

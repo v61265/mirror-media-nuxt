@@ -10,30 +10,31 @@
           ref="ordererDOM"
           type="訂購人"
           :setOrdererData="setOrdererData"
-          :setFormStatus="setFormStatus"
           :validateOn="validateOn"
+          :setFormStatus="setFormStatus"
         />
         <SubscribeFormOrdererData
           ref="receiverDOM"
           type="收件人"
           :setOrdererData="setOrdererData"
-          :setFormStatus="setFormStatus"
-          :validateOn="validateOn"
           :receiverDataIsSameAsOrderer="receiverDataIsSameAsOrderer"
           :setReceiverDataIsSameAsOrderer="setReceiverDataIsSameAsOrderer"
+          :validateOn="validateOn"
+          :setFormStatus="setFormStatus"
         />
 
-        <SubscribeFormShip :setShipPlan="setShipPlan" />
+        <SubscribeFormShip ref="shipDOM" :setShipPlan="setShipPlan" />
         <SubscribeFormReceipt
           ref="receiptDOM"
           :setReceiptData="setReceiptData"
+          :validateOn="validateOn"
+          :setFormStatus="setFormStatus"
         />
 
         <SubscribeFormAcceptPermission
           ref="permissionDOM"
           v-model="acceptPermission"
         />
-        <SubscribeFormCreditCard />
 
         <UiSubscribeButton title="確認訂購" @click.native="submitHandler" />
       </div>
@@ -55,7 +56,6 @@ import SubscribeFormOrdererData from '~/components/SubscribeFormOrdererData.vue'
 import SubscribeFormShip from '~/components/SubscribeFormShip.vue'
 import SubscribeFormReceipt from '~/components/SubscribeFormReceipt.vue'
 import SubscribeFormAcceptPermission from '~/components/SubscribeFormAcceptPermission.vue'
-import SubscribeFormCreditCard from '~/components/SubscribeFormCreditCard.vue'
 import UiSubscribeButton from '~/components/UiSubscribeButton.vue'
 export default {
   components: {
@@ -65,33 +65,12 @@ export default {
     SubscribeFormShip,
     SubscribeFormReceipt,
     SubscribeFormAcceptPermission,
-    SubscribeFormCreditCard,
     UiSubscribeButton,
   },
   props: {
-    perchasedPlan: {
-      type: Array,
-      isRequired: true,
-      default: () => {
-        return [
-          {
-            id: 0,
-            title: '一年方案',
-            detail: '一年鏡週刊52期，加購5期方案',
-            originalPrice: 3990,
-            newPrice: 2880,
-            count: 0,
-          },
-          {
-            id: 1,
-            title: '二年方案',
-            detail: '二年鏡週刊104期，加購10期方案',
-            originalPrice: 7800,
-            newPrice: 5280,
-            count: 0,
-          },
-        ]
-      },
+    currentChoosedPlanId: {
+      type: Number,
+      default: 0,
     },
     proceedOrderPayment: {
       type: Function,
@@ -105,9 +84,29 @@ export default {
   },
   data() {
     return {
+      perchasedPlan: [
+        {
+          id: 0,
+          title: '一年方案',
+          detail: '訂購紙本鏡週刊 52 期，加贈 5 期',
+          originalPrice: 3990,
+          newPrice: 2,
+          // newPrice: 2880,
+          count: this.currentChoosedPlanId === 0 ? 1 : 0,
+        },
+        {
+          id: 1,
+          title: '二年方案',
+          detail: '訂購紙本鏡週刊 104 期，加贈 10 期',
+          originalPrice: 7800,
+          newPrice: 3,
+          // newPrice: 5280,
+          count: this.currentChoosedPlanId === 1 ? 1 : 0,
+        },
+      ],
       discount: {
         hasCode: false,
-        code: '',
+        code: 'MR000',
       },
       ordererData: {
         name: '',
@@ -131,7 +130,7 @@ export default {
       },
       receiptData: {
         receiptPlan: '捐贈',
-        donateOrganization: '財團法人伊甸社會福利基金會',
+        donateOrganization: '',
         carrierType: 'mail',
         carrierNumber: '',
         carrierTitle: '',
@@ -147,6 +146,7 @@ export default {
       formStatus: {
         orderer: 'OK',
         receiver: 'OK',
+        receipt: 'OK',
       },
     }
   },
@@ -195,10 +195,51 @@ export default {
     setFormStatus(type, formStatus) {
       this.formStatus[type] = formStatus
     },
+    generateCarrierInt(carrierType) {
+      if (this.receiptData.donateOrganization) {
+        return undefined
+      }
+
+      switch (carrierType) {
+        case 'mail':
+          return '2'
+
+        case '手機條碼':
+          return '0'
+
+        case '自然人憑證':
+          return '1'
+      }
+    },
+    generateItemData() {
+      let itemDest = '一年鏡週刊52期，加購5期方案'
+      let amount = 1
+      let price = 2880
+
+      this.perchasedPlan.forEach((item) => {
+        if (item.count > 0) {
+          itemDest = item.detail
+          amount = item.count
+          price = item.newPrice
+        }
+      })
+
+      return {
+        itemDest,
+        amount,
+        price,
+      }
+    },
     getOrderPayload() {
+      const { itemDest, amount, price } = this.generateItemData()
+
       return {
         // 商品相關
-        items: this.perchasedItems,
+        // items: this.perchasedItems,
+        merchant_id: 'MS315799494',
+        item_desc: itemDest,
+        amount: parseInt(amount),
+        price,
         discount_code: this.discount.code,
 
         // 購買者相關
@@ -221,15 +262,19 @@ export default {
         price_total: this.total,
 
         // 發票相關
-        carrier_type: this.receiptData.carrierType,
+        carrier_type: this.generateCarrierInt(this.receiptData.carrierType),
         carrier_number: this.receiptData.carrierNumber,
         carrier_title: this.receiptData.carrierTitle,
         carrier_ubn: this.receiptData.carrierUbn,
+
+        // 捐贈發票
+        love_code: this.receiptData.donateOrganization,
       }
     },
     validationPass() {
       const validateArray = Object.values(this.formStatus)
-      if (validateArray.find((item) => item !== 'OK')) {
+      const result = validateArray.find((item) => item !== 'OK')
+      if (result) {
         return false
       } else {
         return true
@@ -244,15 +289,17 @@ export default {
       // check form's validationStatus
       this.ordererData = this.$refs.ordererDOM.check()
       this.receiverData = this.$refs.receiverDOM.check()
+      this.$refs.receiptDOM.check()
       this.$refs.permissionDOM.check()
+
       if (this.receiverDataIsSameAsOrderer) {
         this.receiverData = this.ordererData
       }
 
       if (this.validationPass() && this.acceptPermission) {
         const payload = this.getOrderPayload()
-
-        // console.log(payload)
+        const str = JSON.stringify(payload)
+        console.log(str)
         this.proceedOrderPayment(payload)
       }
     },
@@ -391,7 +438,8 @@ export default {
   .error {
     animation-name: errorShake;
     animation-duration: 0.3s;
-    input {
+    input,
+    select {
       border: solid 2px rgba(232, 24, 49, 0.5);
     }
 

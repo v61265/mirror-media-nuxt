@@ -5,11 +5,11 @@
         <SubscribeChoosePlanCard
           v-for="plan in planList"
           :key="plan.id"
+          :planUrl="plan.id + 1"
           :title="plan.title"
           :detail="plan.detail"
           :originalPrice="plan.originalPrice"
           :newPrice="plan.newPrice"
-          @click.native="choosePlan(plan.id)"
         />
       </div>
 
@@ -26,27 +26,21 @@ export default {
     SubscribeChoosePlanCard,
     UiSubscribeInfo,
   },
-  props: {
-    choosePlan: {
-      type: Function,
-      isRequired: true,
-      default: () => {},
-    },
-  },
+
   data() {
     return {
       planList: [
         {
           id: 0,
           title: '一年方案',
-          detail: '訂購一年鏡週刊52期，加購5期',
+          detail: '訂購紙本鏡週刊 52 期，加贈 5 期',
           originalPrice: 3990,
           newPrice: 2880,
         },
         {
           id: 1,
           title: '二年方案',
-          detail: '訂購二年鏡週刊104期，加購10期',
+          detail: '訂購紙本鏡週刊 104 期，加贈 10 期',
           originalPrice: 7800,
           newPrice: 5280,
         },

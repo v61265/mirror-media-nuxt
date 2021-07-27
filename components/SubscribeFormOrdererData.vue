@@ -1,41 +1,62 @@
 <template>
   <div class="orderer-data">
     <h2 class="subscribe-form__title">{{ type }}</h2>
-
-    <div v-if="!isOrderer" class="orderer-data__check">
-      <input type="checkbox" :value="disable" @change="setDisable" /><span
-        >同訂購人資訊</span
-      >
-    </div>
-
+    <template v-if="!isOrderer">
+      <p class="orderer-data__detail">資料請務必正確填寫，以利雜誌寄送。</p>
+      <div class="orderer-data__check">
+        <input
+          type="checkbox"
+          :value="disable"
+          @change="setDisable"
+          placeholder="我是範例"
+        /><span>同訂購人資訊</span>
+      </div>
+    </template>
     <div
       class="orderer-data__input_wrapper half"
       :class="{ error: $v.name.$error && isNeedToCheck }"
     >
       <span>姓名</span>
-      <input v-model.trim="$v.name.$model" type="text" :disabled="disable" />
+      <input
+        v-model.trim="$v.name.$model"
+        type="text"
+        :placeholder="`${type}姓名`"
+        :disabled="disable"
+      />
       <span
-        v-if="!$v.name.required && $v.name.$error && isNeedToCheck"
+        v-show="!$v.name.required && $v.name.$error && isNeedToCheck"
         class="error__message"
-        >欄位不得為空</span
+        >{{ type }}姓名不可空白</span
       >
     </div>
 
     <div class="phone">
       <div
         class="orderer-data__input_wrapper phone__cellphone"
-        :class="{ error: $v.cellphone.$error && isNeedToCheck }"
+        :class="{
+          error:
+            ($v.cellphone.$error || !isValidPhone) &&
+            isNeedToCheck &&
+            shouldShowPhoneError,
+        }"
       >
         <span>手機</span>
         <input
           v-model.trim="$v.cellphone.$model"
           :disabled="disable"
+          placeholder="0912345678"
           type="text"
+          @input="handleInputCellphone"
         />
         <span
           v-if="!$v.cellphone.required && $v.cellphone.$error && isNeedToCheck"
           class="error__message"
-          >欄位不得為空</span
+          >{{ type }}聯絡電話不可空白</span
+        >
+        <span
+          v-else-if="!isValidPhone && isNeedToCheck && shouldShowPhoneError"
+          class="error__message"
+          >請輸入有效的聯絡電話</span
         >
       </div>
 
@@ -47,6 +68,7 @@
             :disabled="disable"
             class="multi__phone"
             type="text"
+            placeholder="023456789"
           />
           <span>-</span>
           <input
@@ -65,11 +87,16 @@
       :class="{ error: $v.address.$error && isNeedToCheck }"
     >
       <span>通訊地址</span>
-      <input v-model.trim="$v.address.$model" :disabled="disable" type="text" />
+      <input
+        v-model.trim="$v.address.$model"
+        :disabled="disable"
+        type="text"
+        :placeholder="`${type}通訊地址`"
+      />
       <span
-        v-if="!$v.address.required && $v.address.$error && isNeedToCheck"
+        v-show="!$v.address.required && $v.address.$error && isNeedToCheck"
         class="error__message"
-        >欄位不得為空</span
+        >{{ type }}通訊地址不可空白</span
       >
     </div>
 
@@ -79,16 +106,21 @@
       :class="{ error: $v.email.$error && isNeedToCheck }"
     >
       <span>電子信箱</span>
-      <input v-model.trim="$v.email.$model" :disabled="disable" type="text" />
+      <input
+        v-model.trim="$v.email.$model"
+        :disabled="disable"
+        type="text"
+        :placeholder="`${type}電子信箱`"
+      />
       <span
-        v-if="!$v.email.email && $v.email.$error && isNeedToCheck"
+        v-show="!$v.email.email && $v.email.$error && isNeedToCheck"
         class="error__message"
-        >電子信箱格式錯誤</span
+        >請輸入有效的 Email 地址</span
       >
       <span
-        v-if="!$v.email.required && $v.email.$error && isNeedToCheck"
+        v-show="!$v.email.required && $v.email.$error && isNeedToCheck"
         class="error__message"
-        >欄位不得為空</span
+        >{{ type }}電子郵件不得為空</span
       >
     </div>
   </div>
@@ -96,6 +128,7 @@
 
 <script>
 import { required, email } from 'vuelidate/lib/validators'
+import { isValidPhoneNumber } from 'libphonenumber-js'
 
 export default {
   props: {
@@ -103,6 +136,10 @@ export default {
       type: String,
       isRequired: true,
       default: '訂購人',
+    },
+    ordererData: {
+      type: Object,
+      default: () => {},
     },
     setOrdererData: {
       type: Function,
@@ -136,6 +173,7 @@ export default {
       phoneExt: '',
       address: '',
       email: '',
+      shouldShowPhoneError: false,
     }
   },
   validations: {
@@ -174,23 +212,35 @@ export default {
           return 'orderer'
       }
     },
+    isValidPhone() {
+      return isValidPhoneNumber(this.cellphone, 'TW')
+    },
   },
 
   methods: {
     setDisable(e) {
       e.preventDefault()
       this.setReceiverDataIsSameAsOrderer(!this.receiverDataIsSameAsOrderer)
-      this.name = ''
-      this.cellphone = ''
-      this.phone = ''
-      this.phoneExt = ''
-      this.address = ''
-      this.email = ''
+      if (this.receiverDataIsSameAsOrderer) return
+      const {
+        name,
+        cellphone,
+        phone,
+        phoneExt,
+        address,
+        email,
+      } = this.ordererData
+      this.name = name
+      this.cellphone = cellphone
+      this.phone = phone
+      this.phoneExt = phoneExt
+      this.address = address
+      this.email = email
     },
     check() {
       if (this.isNeedToCheck) {
         this.$v.$touch()
-        if (this.$v.$invalid) {
+        if (this.$v.$invalid || !this.isValidPhone) {
           this.submitStatus = 'ERROR'
         } else {
           this.submitStatus = 'OK'
@@ -211,6 +261,62 @@ export default {
         email: this.email,
       }
     },
+    handleInputCellphone() {
+      this.shouldShowPhoneError = true
+    },
+  },
+  watch: {
+    ordererData: {
+      deep: true,
+      handler() {
+        if (this.receiverDataIsSameAsOrderer) {
+          const {
+            name,
+            cellphone,
+            phone,
+            phoneExt,
+            address,
+            email,
+          } = this.ordererData
+          this.name = name
+          this.cellphone = cellphone
+          this.phone = phone
+          this.phoneExt = phoneExt
+          this.address = address
+          this.email = email
+        }
+      },
+    },
+    name(val) {
+      if (this.getFormType === 'orderer') {
+        this.setOrdererData({ ...this.ordererData, name: val })
+      }
+    },
+    cellphone(val) {
+      if (this.getFormType === 'orderer') {
+        this.setOrdererData({ ...this.ordererData, cellphone: val })
+      }
+    },
+    phone(val) {
+      if (this.getFormType === 'orderer') {
+        this.setOrdererData({ ...this.ordererData, phone: val })
+      }
+    },
+    phoneExt(val) {
+      if (this.getFormType === 'orderer') {
+        this.setOrdererData({ ...this.ordererData, phoneExt: val })
+      }
+    },
+    address(val) {
+      if (this.getFormType === 'orderer') {
+        this.setOrdererData({ ...this.ordererData, address: val })
+      }
+    },
+    email(val) {
+      if (this.getFormType === 'orderer') {
+        this.setOrdererData({ ...this.ordererData, email: val })
+      }
+    },
   },
 }
 </script>
@@ -222,6 +328,13 @@ export default {
 
   @include media-breakpoint-up(md) {
     padding: 0;
+  }
+
+  &__detail {
+    margin-bottom: 16px;
+    font-size: 16px;
+    line-height: 150%;
+    color: rgba(0, 0, 0, 0.66);
   }
 
   &__check {

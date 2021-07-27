@@ -32,24 +32,30 @@ export default {
         },
         {
           id: 2,
-          text: '若需更址，請於週四中午 12:00 前來電，我們將於下週寄送新址。',
+          text:
+            '若需更改收件地址，請於每週四中午 12:00 前來電，我們將於下週寄送至新址。',
         },
         {
           id: 3,
-          text: '雜誌如有下列情事者，同意訂戶退貨： ',
+          text:
+            '訂單成立後，會收到我們 email 給您的確認信。手機號碼及電子信箱請務必正確填寫。',
+        },
+        {
+          id: 4,
+          text: '雜誌的取消/退訂注意事項',
           child: [
             {
               id: 0,
               text:
-                '訂戶可依消費者保護法規定得於完成付款日起算七天猶豫期內主張退貨且可獲全額退款，如已開始配送，其處理說明如下：',
+                '雜誌未配送前可全額退款。雜誌如已開始配送，退費金額=原訂金額-(零售價 $75 x 訂閱已配送期數)-原訂金額之 5% 手續費',
             },
             {
               id: 1,
-              text: '(1) 訂戶需支付作業手續費用。',
+              text: '註1：訂閱已配送期數包含已進入配送作業流程的期數。',
             },
             {
               id: 2,
-              text: '(2) 贈送的期數將不列入計算。',
+              text: '如有疑問請來電 02-6633-3882 詢問。',
             },
           ],
         },
@@ -77,11 +83,11 @@ export default {
     font-style: normal;
     line-height: normal;
     letter-spacing: normal;
-    color: #4a4a4a;
+    color: #000000de;
     margin-bottom: 13px;
 
     @include media-breakpoint-up(sm) {
-      font-size: 26px;
+      font-size: 24px;
     }
   }
   ul {
@@ -91,13 +97,13 @@ export default {
     li {
       max-width: 940px;
       margin: auto;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: normal;
       font-stretch: normal;
       font-style: normal;
       line-height: 2;
       letter-spacing: normal;
-      color: #4a4a4a;
+      color: #000000de;
       .subscribe-info__sub {
         margin-left: 8px;
       }

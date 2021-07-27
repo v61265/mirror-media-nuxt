@@ -10,6 +10,8 @@
           :perchasedPlan="waitToEdittedPerchasedPlan"
           :showAll="true"
           :class="{ error: bothCountZero || tooManyPlans }"
+          :isPopUp="true"
+          :setCount="setCount"
         />
 
         <div class="edit-perchase__dialog_controller">
@@ -20,6 +22,7 @@
           />
           <UiSubscribeButton
             :title="`確認修改`"
+            :isDisabled="isButtonDisabled"
             @click.native="acceptModification"
           />
         </div>
@@ -47,17 +50,17 @@ export default {
           {
             id: 0,
             title: '一年方案',
-            detail: '一年鏡週刊52期，加購5期方案',
+            detail: '一年鏡週刊52期',
             originalPrice: 3990,
-            newPrice: 2880,
+            newPrice: 2800,
             count: 0,
           },
           {
             id: 1,
             title: '二年方案',
-            detail: '二年鏡週刊104期，加購10期方案',
+            detail: '二年鏡週刊104期',
             originalPrice: 7800,
-            newPrice: 5280,
+            newPrice: 5200,
             count: 0,
           },
         ]
@@ -74,17 +77,17 @@ export default {
         {
           id: 0,
           title: '一年方案',
-          detail: '一年鏡週刊52期，加購5期方案',
+          detail: '一年鏡週刊52期',
           originalPrice: 3990,
-          newPrice: 2880,
+          newPrice: 2800,
           count: 0,
         },
         {
           id: 1,
           title: '二年方案',
-          detail: '二年鏡週刊104期，加購10期方案',
+          detail: '二年鏡週刊104期',
           originalPrice: 7800,
-          newPrice: 5280,
+          newPrice: 5200,
           count: 0,
         },
       ],
@@ -122,6 +125,13 @@ export default {
     toggleHandler() {
       this.isToggled = !this.isToggled
     },
+    setCount(id, newCount) {
+      this.waitToEdittedPerchasedPlan.map((plan) => {
+        if (plan.id === id) {
+          plan.count = newCount
+        }
+      })
+    },
     cancelModification() {
       this.isToggled = !this.isToggled
     },
@@ -135,6 +145,12 @@ export default {
         })
         this.isToggled = !this.isToggled
       }
+    },
+  },
+
+  computed: {
+    isButtonDisabled() {
+      return this.bothCountZero || this.tooManyPlans
     },
   },
 }

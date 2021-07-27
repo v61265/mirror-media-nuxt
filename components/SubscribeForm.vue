@@ -5,10 +5,12 @@
         <SubscribeFormPlanList
           :perchasedPlan="perchasedPlan"
           :discount="discount"
+          :setHasCode="setHasCode"
         />
         <SubscribeFormOrdererData
           ref="ordererDOM"
           type="訂購人"
+          :ordererData="ordererData"
           :setOrdererData="setOrdererData"
           :validateOn="validateOn"
           :setFormStatus="setFormStatus"
@@ -16,6 +18,7 @@
         <SubscribeFormOrdererData
           ref="receiverDOM"
           type="收件人"
+          :ordererData="ordererData"
           :setOrdererData="setOrdererData"
           :receiverDataIsSameAsOrderer="receiverDataIsSameAsOrderer"
           :setReceiverDataIsSameAsOrderer="setReceiverDataIsSameAsOrderer"
@@ -43,6 +46,12 @@
           :price="price"
           :shipping="shipping"
           :total="total"
+          :discount="discountPrice"
+        />
+        <SubscribeDiscount
+          v-for="discount in discountList"
+          :key="discount.title"
+          :discount="discount"
         />
       </div>
     </div>
@@ -50,6 +59,7 @@
 </template>
 
 <script>
+import SubscribeDiscount from '~/components/SubscribeDiscount.vue'
 import SubscribeFormPlanList from '~/components/SubscribeFormPlanList.vue'
 import SubscribeFormPerchaseInfo from '~/components/SubscribeFormPerchaseInfo.vue'
 import SubscribeFormOrdererData from '~/components/SubscribeFormOrdererData.vue'
@@ -59,6 +69,7 @@ import SubscribeFormAcceptPermission from '~/components/SubscribeFormAcceptPermi
 import UiSubscribeButton from '~/components/UiSubscribeButton.vue'
 export default {
   components: {
+    SubscribeDiscount,
     SubscribeFormPlanList,
     SubscribeFormPerchaseInfo,
     SubscribeFormOrdererData,
@@ -88,25 +99,23 @@ export default {
         {
           id: 0,
           title: '一年方案',
-          detail: '訂購紙本鏡週刊 52 期，加贈 5 期',
+          detail: '一年鏡週刊 52 期',
           originalPrice: 3990,
-          newPrice: 2,
-          // newPrice: 2880,
+          newPrice: 2800,
           count: this.currentChoosedPlanId === 0 ? 1 : 0,
         },
         {
           id: 1,
           title: '二年方案',
-          detail: '訂購紙本鏡週刊 104 期，加贈 10 期',
+          detail: '二年鏡週刊 104 期',
           originalPrice: 7800,
-          newPrice: 3,
-          // newPrice: 5280,
+          newPrice: 5200,
           count: this.currentChoosedPlanId === 1 ? 1 : 0,
         },
       ],
       discount: {
         hasCode: false,
-        code: 'MR000',
+        code: '',
       },
       ordererData: {
         name: '',
@@ -125,7 +134,7 @@ export default {
         email: '',
       },
       shipPlan: {
-        name: '限時專送',
+        name: '一般配送',
         cost: 0,
       },
       receiptData: {
@@ -169,14 +178,45 @@ export default {
           currentValue.newPrice * currentValue.count
         )
       }
-
       return this.perchasedPlan.reduce(reducer)
     },
+    discountPrice() {
+      let count
+      this.perchasedPlan.map((plan) => {
+        if (plan.count !== 0) {
+          count = plan.count
+        }
+      })
+      return this.discount.hasCode ? 80 * count : 0
+    },
     shipping() {
-      return this.shipPlan?.cost || 0
+      let year, count
+      this.perchasedPlan.map((plan) => {
+        if (plan.count !== 0) {
+          count = plan.count
+          year = plan.title === '二年方案' ? 2 : 1
+        }
+      })
+      return this.shipPlan?.cost * year * 52 * count || 0
     },
     total() {
-      return this.price + this.shipping
+      return this.price + this.shipping - this.discountPrice
+    },
+    discountList() {
+      let title
+      this.perchasedPlan.map((plan) => {
+        if (plan.count !== 0) {
+          title = plan.title
+        }
+      })
+      const year = title === '二年方案' ? 2 : 1
+      const discountList = [
+        { title: `符合${title}優惠`, content: `贈送 ${year * 5} 期` },
+      ]
+      if (this.discount.hasCode) {
+        discountList.push({ title: '符合續訂優惠', content: `贈送 ${year} 期` })
+      }
+      return discountList
     },
   },
   methods: {
@@ -195,6 +235,9 @@ export default {
     setFormStatus(type, formStatus) {
       this.formStatus[type] = formStatus
     },
+    setHasCode(newSataus) {
+      this.discount.hasCode = newSataus
+    },
     generateCarrierInt(carrierType) {
       if (this.receiptData.donateOrganization) {
         return undefined
@@ -212,9 +255,9 @@ export default {
       }
     },
     generateItemData() {
-      let itemDest = '一年鏡週刊52期，加購5期方案'
+      let itemDest = '一年鏡週刊52期'
       let amount = 1
-      let price = 2880
+      let price = 2800
 
       this.perchasedPlan.forEach((item) => {
         if (item.count > 0) {
@@ -241,6 +284,7 @@ export default {
         amount: parseInt(amount),
         price,
         discount_code: this.discount.code,
+        discount: this.discountPrice,
 
         // 購買者相關
         pur_name: this.ordererData.name,
@@ -256,6 +300,7 @@ export default {
         rec_addr: this.receiverData.address,
         rec_remark: '', // TODO
         delivery: this.shipPlan.name,
+        deliveryCost: this.shipping,
 
         // 付款相關
         prime_token: '',
@@ -340,8 +385,13 @@ export default {
       max-width: 550px;
     }
 
+    &:first-child {
+      margin-bottom: 60px;
+      color: red;
+    }
+
     & > div {
-      margin-bottom: 42px;
+      margin-bottom: 48px;
     }
 
     & > .subcribe-button {
@@ -361,19 +411,24 @@ export default {
   }
 
   &__title {
-    font-size: 26px;
+    font-size: 22px;
+    line-height: 34px;
     font-weight: normal;
     font-stretch: normal;
     font-style: normal;
-    line-height: normal;
     letter-spacing: normal;
-    color: #4a4a4a;
-    margin-bottom: 16px;
+    color: rgba(0, 0, 0, 0.87);
+    margin-bottom: 12px;
+
+    @include media-breakpoint-up(sm) {
+      font-size: 24px;
+      line-height: 31px;
+    }
   }
 
   span {
     display: block;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: normal;
     font-stretch: normal;
     font-style: normal;
@@ -382,57 +437,63 @@ export default {
     color: #4a4a4a;
     margin-bottom: 6px;
 
+    @include media-breakpoint-up(sm) {
+      font-size: 18px;
+    }
+
     &.radio {
       margin-bottom: 0;
     }
   }
-  select {
-    height: 44px;
-    width: 100%;
-    padding: 11px 7px 11px;
-    border-radius: 4px;
-    box-shadow: inset 1px 1px 1px 0 rgba(0, 0, 0, 0.1);
-    background: #f5f5f5;
-    font-size: 15px;
-
-    &:focus {
-      outline: none;
-    }
-  }
 
   input[type='text'] {
-    height: 44px;
+    height: 48px;
     width: 100%;
-    padding: 11px 7px 11px;
-    border-radius: 4px;
-    box-shadow: inset 1px 1px 1px 0 rgba(0, 0, 0, 0.1);
-    background: #f5f5f5;
-    font-size: 15px;
+    padding: 12px;
+    border-radius: 2px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    font-size: 18px;
+    line-height: 25px;
+    color: rgba(0, 0, 0, 0.87);
 
     &:focus {
       outline: none;
+      border: 1px solid rgba(0, 0, 0, 0.87);
     }
 
     &:disabled {
-      background: #ebebeb;
+      background: #e3e3e3;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      color: rgba(0, 0, 0, 0.2);
+      font-size: 18px;
+      line-height: 25px;
+    }
+
+    &::placeholder {
+      font-size: 18px;
+      line-height: 25px;
+      color: rgba(0, 0, 0, 0.3);
     }
   }
 
   input[type='checkbox'] {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: 2px;
     box-shadow: inset 1px 1px 1px 0 rgba(0, 0, 0, 0.2);
     background-color: #f5f5f5;
     margin-right: 8px;
+    color: #054f77;
   }
 
   input[type='radio'] {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     padding: 6px;
     border-radius: 11px;
     background-color: #f5f5f5;
+    color: #04295e;
   }
 
   .error {
@@ -440,12 +501,14 @@ export default {
     animation-duration: 0.3s;
     input,
     select {
-      border: solid 2px rgba(232, 24, 49, 0.5);
+      border: 1px solid #e51731;
     }
 
     &__message {
-      margin-top: 3px;
-      color: rgba(232, 24, 49, 0.5) !important;
+      margin-top: 8px;
+      color: #e51731 !important;
+      font-size: 16px;
+      line-height: 150%;
     }
   }
   @keyframes errorShake {

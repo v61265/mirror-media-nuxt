@@ -1,9 +1,10 @@
 <template>
   <div
     class="subcribe-button"
-    :class="{ 'subscribe-button__light': isColorLight }"
+    :class="{ 'subscribe-button__light': isColorLight, disabled: isDisabled }"
   >
     {{ title }}
+    <p class="subcribe-button__hint">{{ hint }}</p>
   </div>
 </template>
 
@@ -15,7 +16,15 @@ export default {
       isRequired: true,
       default: '',
     },
+    hint: {
+      type: String,
+      default: '',
+    },
     isColorLight: {
+      type: Boolean,
+      default: false,
+    },
+    isDisabled: {
       type: Boolean,
       default: false,
     },
@@ -37,12 +46,18 @@ export default {
   padding: 13px 13px 12px;
   width: 100%;
   max-width: 340px;
-  border-radius: 4px;
+  border-radius: 2px;
   cursor: pointer;
-  background-color: #1b7aae;
+  background-color: #054f77;
 
-  &:active {
-    background: rgb(33, 78, 116);
+  &:active,
+  &:hover {
+    background: linear-gradient(
+        0deg,
+        rgba(29, 159, 184, 0.3),
+        rgba(29, 159, 184, 0.3)
+      ),
+      #054f77;
   }
 
   @include media-breakpoint-up(sm) {
@@ -55,6 +70,20 @@ export default {
     &:active {
       background: rgb(155, 155, 155);
     }
+  }
+
+  &.disabled {
+    background: #e3e3e3;
+    color: rgba(0, 0, 0, 0.2);
+    cursor: not-allowed;
+  }
+
+  &__hint {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 18px;
+    color: #ffffff;
+    opacity: 0.66;
   }
 }
 </style>

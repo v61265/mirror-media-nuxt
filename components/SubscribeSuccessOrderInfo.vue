@@ -8,10 +8,11 @@
           title="訂單編號"
           :data="orderInfo.orderId"
         />
-        <!-- <SubscribeSuccessOrderInfoContentRow
+        <SubscribeSuccessOrderInfoContentRow
+          v-if="orderInfo.discountPrice"
           title="續訂戶代碼"
-          data="窩不知道"
-        /> -->
+          :data="`MR000 ${orderInfo.discount_code}`"
+        />
         <SubscribeSuccessOrderInfoContentRow
           title="訂單日期"
           :data="orderDate"
@@ -138,11 +139,9 @@ export default {
   background-color: #f5f5f5;
   color: rgba(0, 0, 0, 0.87);
   font-size: 16px;
-
   & > * + * {
     margin-top: 42px;
   }
-
   @include media-breakpoint-up(sm) {
     padding: 22px 25px;
   }
@@ -157,18 +156,23 @@ export default {
   font-size: 22px;
 
   @include media-breakpoint-up(sm) {
-    font-size: 26px;
+    font-size: 24px;
   }
 }
 
 .order-info__user_content_title {
+  font-weight: 500;
   font-size: 18px;
   margin-bottom: 18px;
+  @include media-breakpoint-up(sm) {
+    font-size: 20px;
+  }
 }
 
 .order-info__order_content,
 .order-info__user_content {
   margin-top: 24px;
+  color: #000000a8;
 }
 
 .order-info__order_content_perchased {

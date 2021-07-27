@@ -10,6 +10,11 @@
       <span>NT$ {{ shipping }}</span>
     </div>
 
+    <div v-show="discount" class="perchase-info__row discount">
+      <span>續訂戶折扣</span>
+      <span>-NT$ {{ discount }}</span>
+    </div>
+
     <div class="perchase-info__devider" />
 
     <div class="perchase-info__row">
@@ -38,6 +43,10 @@ export default {
       isRequired: true,
       default: 0,
     },
+    discount: {
+      type: Number,
+      default: 0,
+    },
   },
 }
 </script>
@@ -57,6 +66,10 @@ export default {
     justify-content: space-between;
     margin-bottom: 14px;
 
+    &.discount span {
+      color: #054f77;
+    }
+
     &:last-child {
       margin-bottom: 0;
     }
@@ -64,12 +77,12 @@ export default {
 
   &__devider {
     margin: 18px 0 19px;
-    border: solid 1px #4a4a4a;
+    border: 1px solid #00000080;
   }
 }
 
 .subscribe-form__title {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: normal;
   font-stretch: normal;
   font-style: normal;
@@ -77,5 +90,8 @@ export default {
   letter-spacing: normal;
   color: #4a4a4a;
   margin-bottom: 24px;
+  @include media-breakpoint-up(sm) {
+    font-size: 24px;
+  }
 }
 </style>

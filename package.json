@@ -1,6 +1,6 @@
 {
   "name": "mirror-media-nuxt",
-  "version": "1.43.0",
+  "version": "1.44.0",
   "description": "My gnarly Nuxt.js project",
   "author": "mirror-media",
   "private": true,
@@ -18,7 +18,7 @@
     "node": ">= 12"
   },
   "lint-staged": {
-    "*.{js,vue}": "yarn lint"
+    "*.{js,vue}": "eslint --ext .js,.vue --ignore-path .gitignore"
   },
   "husky": {
     "hooks": {

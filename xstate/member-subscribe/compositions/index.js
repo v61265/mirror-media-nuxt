@@ -86,24 +86,32 @@ import { useService } from 'xstate-vue2'
 import { ref, useContext, useRouter } from '@nuxtjs/composition-api'
 import { interpret } from 'xstate'
 import createMachine from '~/xstate/member-subscribe/machine'
-import { isMemberSubscribeFeatureToggled } from '~/xstate/member-subscribe/util'
+import {
+  createResolvedState,
+  isMemberSubscribeFeatureToggled,
+} from '~/xstate/member-subscribe/util'
 
 const service = ref()
 
 export function useMemberSubscribeMachine() {
   const { route } = useContext()
-  if (!isMemberSubscribeFeatureToggled(route)) {
+  if (!isMemberSubscribeFeatureToggled(route) || process.server) {
     return {}
   }
 
   if (!service.value) {
     const { store } = useContext()
     const router = useRouter()
-    service.value = interpret(createMachine(router, route, store), {
+    const machine = createMachine(router, route, store)
+    const resolvedState = createResolvedState(machine)
+    service.value = interpret(machine, {
       devTools: true,
-    }).start()
+    }).start(resolvedState)
     if (route.value.name === 'premium-slug') {
       service.value.send('到會員文章頁')
+    }
+    if (route.value.name === 'subscribe') {
+      service.value.send('到方案購買頁')
     }
   }
   return useService(service.value)

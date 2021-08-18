@@ -34,6 +34,15 @@ export default function createMachine(router, route, store) {
       navigateToSubscribeFail() {
         createNavigation(router, route, '/subscribe/fail?ms=true')
       },
+      navigateToSubscribeSet() {
+        createNavigation(router, route, '/subscribe/set?ms=true')
+      },
+      navigateToProfilePurchase() {
+        createNavigation(router, route, '/profile/purchase?ms=true')
+      },
+      navigateToSectionMember() {
+        window.location.assign('/section/member')
+      },
     },
   }).withContext({
     ...machine.context,
@@ -46,13 +55,13 @@ function createNavigation(router, route, path) {
   if (!path || shouldStopNavigation(route, path)) {
     return
   }
-  router.push(path)
+  router.replace(path)
 
   function shouldStopNavigation(route, path) {
     return isCurrentRoutePathMatching()
 
     function isCurrentRoutePathMatching() {
-      return route.value.path.startsWith(path)
+      return route.value.fullPath.startsWith(path)
     }
   }
 }

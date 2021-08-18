@@ -265,11 +265,11 @@ export default {
 .purchase {
   min-height: calc(100vw - 150px);
   margin: 0 auto;
-  max-width: 680px;
+  max-width: 600px;
   padding: 40px 20px 20px 20px;
   @include media-breakpoint-up(md) {
     padding: 24px 0;
-    max-width: 600px;
+    max-width: 680px;
   }
 
   &__title {
@@ -333,7 +333,7 @@ export default {
     padding: 0;
     @include media-breakpoint-up(md) {
       border: 1px solid rgba(0, 0, 0, 0.1);
-      padding: 24px 24px 16px 24px;
+      padding: 40px;
     }
 
     div {

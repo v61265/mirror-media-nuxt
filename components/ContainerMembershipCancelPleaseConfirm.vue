@@ -15,23 +15,35 @@
       <button class="router-back-button" @click="handleRouterBackClick">
         不刪除，回前頁
       </button>
+
       <button
         class="confirm-cancel-button"
         @click="handleConfirmCancelButtonClick"
       >
-        確認刪除
+        <UiMembershipLoadingIcon v-if="isLoading" :isDark="true" />
+        <span v-else>確認刪除</span>
       </button>
     </div>
   </div>
 </template>
 
 <script>
+import UiMembershipLoadingIcon from '~/components/UiMembershipLoadingIcon.vue'
 import userDelete from '~/apollo/mutations/userDelete.gql'
-
 export default {
-  apollo: {
-    $client: 'userClient',
+  components: {
+    UiMembershipLoadingIcon,
   },
+  apollo: {
+    $client: 'memberSubscription',
+  },
+
+  data() {
+    return {
+      isLoading: false,
+    }
+  },
+
   computed: {
     currentMemberEmail() {
       return this.$store.state.membership.userEmail
@@ -42,26 +54,28 @@ export default {
       this.$router.back()
     },
     async handleConfirmCancelButtonClick() {
+      if (this.isLoading) return
       try {
+        this.isLoading = true
+        const memberId = this.$store.state['membership-subscribe']?.basicInfo.id
         const response = await this.$apollo.mutate({
           mutation: userDelete,
           variables: {
-            firebaseId: this.$store.state.membership.userUid,
+            id: memberId,
           },
         })
-
         await this.$fire.auth.signOut()
 
         // clear the firebase current user state in the store
         this.$store.commit('membership/ON_AUTH_STATE_CHANGED_MUTATION', {
           authUser: {},
         })
-
         if (response.error) {
           this.handleConfirmCancelError(response.error)
           return
         }
 
+        this.isLoading = false
         this.$emit('success')
       } catch (err) {
         this.handleConfirmCancelError(err)
@@ -70,6 +84,7 @@ export default {
     handleConfirmCancelError(err) {
       // eslint-disable-next-line no-console
       console.error(err)
+      this.isLoading = false
       this.$emit('error', err)
     },
   },
@@ -124,6 +139,9 @@ export default {
   align-items: center;
   button + button {
     margin: 20px 0 0 0;
+  }
+  button:focus {
+    outline: 0;
   }
 }
 .router-back-button {

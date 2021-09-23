@@ -1,5 +1,14 @@
-mutation ($email: String, $firebaseId: String!){
-  createMember(email: $email, firebaseId: $firebaseId){
+mutation userCreate($email: String, $firebaseId: String!) {
+  createMember(email: $email, firebaseId: $firebaseId) {
     success
+  }
+}
+mutation createMemberProfile($email: String!) {
+  createmember(data: { email: $email }) {
+    id
+    firebaseId
+    email
+    type
+    tos
   }
 }

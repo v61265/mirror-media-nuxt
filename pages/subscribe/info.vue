@@ -1,15 +1,20 @@
 <template>
   <div class="subscribe-info">
-    <SubscribeStepProgress :currentStep="2" />
+    <SubscribeStepProgress
+      :currentStep="2"
+      :isUpgradeFromMonthToYear="isUpgradeFromMonthToYear"
+    />
 
     <div class="subscribe-info__form">
       <div class="subscribe-info__form_wrapper">
         <div class="subscribe-info__form_left">
           <MembershipFormPlanList
             :perchasedPlan="perchasedPlan"
+            :isUpgradeFromMonthToYear="isUpgradeFromMonthToYear"
             @back="handleBack"
           />
           <div
+            v-if="!isUpgradeFromMonthToYear"
             class="subscribe-info__form_left_email"
             :class="{ error: $v.email.$error }"
           >
@@ -35,16 +40,32 @@
             >
           </div>
           <SubscribeFormReceipt
+            v-if="!isUpgradeFromMonthToYear"
             ref="receiptDOM"
             :setReceiptData="setReceiptData"
             :validateOn="validateOn"
             :setFormStatus="setFormStatus"
           />
-          <p class="subscribe-info__form_left_hint">
+          <p
+            v-if="!isUpgradeFromMonthToYear"
+            class="subscribe-info__form_left_hint"
+          >
             按下開始結帳後，頁面將會跳離，抵達由藍新金流 NewebPay
             所提供的線上結帳頁面，完成後將會再跳回到鏡週刊
           </p>
-          <UiSubscribeButton title="開始結帳" @click.native="submitHandler" />
+          <UiSubscribeButton
+            v-if="isUpgradeFromMonthToYear"
+            class="change-plan-btn"
+            title="確認變更方案"
+            :isLoading="isLoading"
+            @click.native="updateHandler"
+          />
+          <UiSubscribeButton
+            v-else
+            title="開始結帳"
+            :isLoading="isLoading"
+            @click.native="submitHandler"
+          />
         </div>
         <div class="subscribe-info__form_right">
           <MembershipFormPerchaseInfo
@@ -54,31 +75,24 @@
         </div>
       </div>
     </div>
-    <MembershipInfoSim
-      v-if="showSimFormStatus"
-      :validateOn="validateOn"
-      :setValidateOn="setValidateOn"
-      :orderStatus="orderStatus"
-      :setOrderStatus="setOrderStatus"
-    />
   </div>
 </template>
 
 <script>
+import qs from 'qs'
 import { required, email } from 'vuelidate/lib/validators'
-import { ENV } from '~/configs/config'
 import SubscribeStepProgress from '~/components/SubscribeStepProgress.vue'
-import MembershipInfoSim from '~/components/MembershipInfoSim.vue'
+import { ENV } from '~/configs/config'
 import MembershipFormPlanList from '~/components/MembershipFormPlanList.vue'
 import MembershipFormPerchaseInfo from '~/components/MembershipFormPerchaseInfo.vue'
 import SubscribeFormReceipt from '~/components/SubscribeFormReceipt.vue'
 import UiSubscribeButton from '~/components/UiSubscribeButton.vue'
 import { useMemberSubscribeMachine } from '~/xstate/member-subscribe/compositions'
-
+import { formatMemberType } from '~/utils/memberSubscription'
 export default {
+  middleware: ['handle-go-to-marketing'],
   components: {
     SubscribeStepProgress,
-    MembershipInfoSim,
     MembershipFormPlanList,
     MembershipFormPerchaseInfo,
     SubscribeFormReceipt,
@@ -86,21 +100,62 @@ export default {
   },
   setup() {
     const { state, send } = useMemberSubscribeMachine()
+    const perchasedPlan = usePerchasedPlan()
     return {
       stateMembershipSubscribe: state,
       sendMembershipSubscribe: send,
+      perchasedPlan,
+    }
+
+    function usePerchasedPlan() {
+      const { state } = useMemberSubscribeMachine()
+      const prefix = '會員訂閱功能.方案購買流程.確認訂購頁.確認訂購表單頁'
+
+      if (state?.value?.matches(`${prefix}.準備單篇訂閱`)) {
+        return [
+          {
+            id: state.value.context.subscriptionOrderOneTimePostId,
+            detail: '鏡週刊Basic會員（單篇）',
+            hint: '單篇 $1 元，享 14 天內無限次觀看',
+            price: '原價 NT$1',
+            newPrice: 1,
+            key: 'basic',
+          },
+        ]
+      } else if (state?.value?.matches(`${prefix}.準備月訂閱`)) {
+        return [
+          {
+            id: 1,
+            detail: '鏡週刊Premium會員（月方案）',
+            hint: '每月 $49 元，信用卡自動續扣',
+            price: '原價 NT$99',
+            newPrice: 49,
+            key: 'month',
+          },
+        ]
+      } else if (
+        state?.value?.matches(`${prefix}.準備年訂閱`) ||
+        state?.value?.matches(`${prefix}.準備將月訂閱升級年訂閱`)
+      ) {
+        return [
+          {
+            id: 1,
+            detail: '鏡週刊Premium會員（年方案）',
+            hint: '每月 $499 元，信用卡自動續扣',
+            price: '原價 NT$1188',
+            newPrice: 499,
+            key: 'year',
+          },
+        ]
+      } else {
+        return [{}]
+      }
     }
   },
   data() {
     return {
-      perchasedPlan: [
-        {
-          id: 1,
-          detail: '鏡週刊 Premium 會員 (月方案)',
-          price: 99,
-          newPrice: 49,
-        },
-      ],
+      isLoading: false,
+      promoteId: 0, // NOTE： 折扣碼必須有值，如果undefined（發query的時候沒有附帶在variables中）會報錯
       email: '',
       receiptData: {
         receiptPlan: '捐贈',
@@ -127,7 +182,33 @@ export default {
     showSimFormStatus() {
       return ENV === 'local'
     },
+    isUpgradeFromMonthToYear() {
+      const currentMemberType = formatMemberType(
+        this.$store.state['membership-subscribe']?.basicInfo?.type
+      )
+      const choosedPlanType = formatMemberType(this.perchasedPlan[0]?.key)
+
+      if (currentMemberType === 'month' && choosedPlanType === 'year') {
+        return true
+      } else {
+        return false
+      }
+    },
+    frequency() {
+      const planFrequency = this.perchasedPlan?.[0]?.key
+      return formatMemberType(planFrequency)
+    },
   },
+  async created() {
+    // ======To Kevin Start=======
+    const isMemberCheckedServiceRule = await this.$getMemberServiceRuleStatus(
+      this
+    )
+    console.log(isMemberCheckedServiceRule)
+
+    // ======To Kevin End=======
+  },
+
   methods: {
     handleBack() {
       this.$router.push('/subscribe')
@@ -144,19 +225,101 @@ export default {
     setOrderStatus(val) {
       this.orderStatus = val
     },
-    submitHandler(e) {
+    async submitHandler(e) {
       e.preventDefault()
-      this.$refs.receiptDOM.check()
-      this.$v.email.$touch()
-      console.log(this.orderStatus)
-      if (
-        this.validateOn &&
-        (this.$v.email.$error || this.formStatus.receipt !== 'OK')
-      )
-        return
-      if (this.orderStatus === 'success')
-        return this.sendMembershipSubscribe('付款成功')
-      this.sendMembershipSubscribe('付款失敗')
+      if (this.isLoading) return
+
+      try {
+        this.isLoading = true
+        this.$refs.receiptDOM.check()
+        this.$v.email.$touch()
+        if (
+          this.validateOn &&
+          (this.$v.email.$error || this.formStatus.receipt !== 'OK')
+        ) {
+          this.isLoading = false
+          return
+        }
+
+        // emit apiGateWay
+        const result = await this.getPaymentDataFromApiGateWay()
+        const tradeInfo = qs.parse(result)
+
+        // // encrypt tradeInfo
+        const encryptPaymentPayload = await this.$axios.$post(
+          '/api/newebpay/encrypt',
+          tradeInfo
+        )
+
+        // carry encrypted paymentPayload to redirect page
+        const queryString = qs.stringify(encryptPaymentPayload)
+        this.$router.push(`/subscribe/redirect?ms=true&${queryString}`)
+
+        /*
+         * if (this.orderStatus === 'success')
+         *   return this.sendMembershipSubscribe('付款成功')
+         * this.sendMembershipSubscribe('付款失敗')
+         */
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    async updateHandler(e) {
+      e.preventDefault()
+      if (this.isLoading) return
+
+      try {
+        this.isLoading = true
+
+        // get this member's current subscription id
+        const currentSubscription = await this.$getPremiumMemberSubscriptionInfo()
+        if (!currentSubscription) return
+
+        // update subscription from month to year
+        await this.$updateSubscriptionFromMonthToYear(currentSubscription.id)
+        this.isLoading = false
+
+        window.alert('方案已升級為年訂閱，下次扣款日立即生效。')
+
+        // TODO: redirect to success page (TO KEVIN)
+        this.$router.push('/subscribe/success')
+      } catch (error) {
+        console.error(error)
+        this.isLoading = false
+      }
+
+      /*
+       * if (this.orderStatus === 'success')
+       *   return this.sendMembershipSubscribe('付款成功')
+       * this.sendMembershipSubscribe('付款失敗')
+       */
+    },
+
+    async getPaymentDataFromApiGateWay() {
+      let gateWayPayload
+      const isPremiumPurchase =
+        this.frequency === 'year' || this.frequency === 'month'
+
+      if (isPremiumPurchase) {
+        gateWayPayload = {
+          email: this.email,
+          frequency: 'monthly',
+          paymentMethod: 'newebpay',
+          status: 'paying',
+          promoteId: this.promoteId, // 折扣碼 (TODO)
+        }
+      } else {
+        // one_time
+        const subscribePostId = this.perchasedPlan?.[0]?.id
+        gateWayPayload = {
+          email: this.email,
+          paymentMethod: 'newebpay',
+          status: 'paying',
+          promoteId: this.promoteId, // 折扣碼 (TODO)
+          postId: subscribePostId,
+        }
+      }
+      return await this.$getPaymentDataOfSubscription(gateWayPayload)
     },
   },
 }
@@ -255,6 +418,15 @@ export default {
         line-height: 150%;
         color: rgba(0, 0, 0, 0.5);
         margin: 24px 0;
+      }
+
+      .change-plan-btn {
+        width: 380px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0%;
       }
     }
 

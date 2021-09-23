@@ -1,6 +1,6 @@
 {
   "name": "mirror-media-nuxt",
-  "version": "1.44.2",
+  "version": "1.45.0",
   "description": "My gnarly Nuxt.js project",
   "author": "mirror-media",
   "private": true,
@@ -28,6 +28,7 @@
   "dependencies": {
     "@google-cloud/logging": "^8.0.6",
     "@mirror-media/nuxt-ssr-cache": "^1.8.0",
+    "@mirrormedia/newebpay-node": "^1.0.6",
     "@nuxtjs/apollo": "^4.0.1-rc.5",
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/composition-api": "^0.26.0",

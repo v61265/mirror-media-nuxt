@@ -49,6 +49,9 @@
         >
       </div>
     </SubscribeWrapper>
+
+    <UiLoadingCover v-if="isLoading" />
+
     <SubscribeCancelSimForm
       v-if="shouldShowSim"
       :isPayByApp="isPayByApp"
@@ -66,17 +69,39 @@ import SubscribeCancelSimForm from '~/components/SubscribeCancelSimForm.vue'
 import UiMembershipButtonPrimary from '~/components/UiMembershipButtonPrimary.vue'
 import UiMembershipButtonSecondary from '~/components/UiMembershipButtonSecondary.vue'
 import UiMembershipCheckoutLabel from '~/components/UiMembershipCheckoutLabel.vue'
+import UiLoadingCover from '~/components/UiLoadingCover.vue'
+import { useMemberSubscribeMachine } from '~/xstate/member-subscribe/compositions'
+import { isMemberPaidSubscriptionWithMobile } from '~/utils/memberSubscription'
 
 export default {
+  middleware: ['handle-go-to-marketing'],
   components: {
     SubscribeWrapper,
     SubscribeCancelSimForm,
     UiMembershipButtonPrimary,
     UiMembershipButtonSecondary,
     UiMembershipCheckoutLabel,
+    UiLoadingCover,
+  },
+  setup() {
+    const { state, send } = useMemberSubscribeMachine()
+    return {
+      stateMembershipSubscribe: state,
+      sendMembershipSubscribe: send,
+    }
+  },
+  async asyncData(context) {
+    // check if user's newest subscription is paid by mobile
+    const isMemberPaidWithMobile = await isMemberPaidSubscriptionWithMobile(
+      context
+    )
+    return {
+      isPayByApp: isMemberPaidWithMobile,
+    }
   },
   data() {
     return {
+      isLoading: false,
       isPayByApp: false,
       reason: [],
       cancelStatus: 'success',
@@ -90,16 +115,31 @@ export default {
     shouldShowTextarea() {
       return this.reason.includes('其他')
     },
+    reasonString() {
+      return this.reason.length
+        ? `取消原因：${this.reason.join('、')}。`
+        : '取消原因：未填寫。'
+    },
   },
   methods: {
     handleBack() {
       window.location.assign('/subscribe/set')
     },
-    handleSubmit() {
-      if (this.cancelStatus === 'success') {
-        return window.location.assign('/subscribe/cancel-success')
+    async handleSubmit() {
+      // ======To Kevin Start=======
+      // ======To Kevin End=======
+      try {
+        this.isLoading = true
+        await this.$cancelMemberSubscription(this.reasonString)
+
+        this.isLoading = false
+        this.cancelStatus = 'success'
+        this.sendMembershipSubscribe('確認取消訂閱成功')
+      } catch (error) {
+        console.error(error)
+        this.isLoading = false
+        this.sendMembershipSubscribe('確認取消訂閱失敗')
       }
-      window.location.assign('/subscribe/cancel-fail')
     },
     setIsPayByApp(val) {
       this.isPayByApp = val

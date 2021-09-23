@@ -1,18 +1,18 @@
 <template>
-  <div class="cancel-success">
+  <div class="marketing">
     <SubscribeWrapper>
-      <h6 class="cancel-success__title">成功取消訂閱</h6>
-      <div class="cancel-success__description">
-        您已取消訂閱
-        <span class="cancel-success__description_blue">
-          鏡週刊 Premium 服務-年訂閱方案
-        </span>
-        。將在本次收費週期 2021/6/30 結束時生效。
+      <h6 class="marketing__title">此頁面為會員訂閱頁面</h6>
+      <div class="marketing__description">
+        <p>
+          由於您為鏡週刊的 VIP，VIP
+          期間不須付款即享會員專區文章暢讀。若您有意願付費支持，請於 VIP
+          期間後再付款
+        </p>
       </div>
       <UiMembershipButtonPrimary
-        class="ancel-success__back"
+        class="marketing__back"
         @click.native="handleBack"
-        >回訂閱紀錄</UiMembershipButtonPrimary
+        >回會員專區</UiMembershipButtonPrimary
       >
     </SubscribeWrapper>
   </div>
@@ -23,18 +23,18 @@ import SubscribeWrapper from '~/components/SubscribeWrapper.vue'
 import UiMembershipButtonPrimary from '~/components/UiMembershipButtonPrimary.vue'
 
 export default {
-  middleware: ['handle-go-to-marketing'],
   components: { SubscribeWrapper, UiMembershipButtonPrimary },
+  middleware: ['handle-forbid-to-marketing'],
   methods: {
     handleBack() {
-      window.location.assign('/profile/purchase?ms=true')
+      window.location.assign('/section/member')
     },
   },
 }
 </script>
 
 <style lang="scss" scoped>
-.cancel-success {
+.marketing {
   min-height: calc(100vw - 150px);
   padding: 40px 20px 0 20px;
   @include media-breakpoint-up(sm) {
@@ -50,11 +50,9 @@ export default {
 
   &__description {
     margin: 4px 0 24px 0;
+    font-size: 18px;
+    line-height: 150%;
     color: rgba(0, 0, 0, 0.66);
-
-    &_blue {
-      color: #054f77;
-    }
   }
 
   &__back {

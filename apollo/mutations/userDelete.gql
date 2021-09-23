@@ -1,5 +1,12 @@
-mutation ($firebaseId: String!){
-  deleteMember(firebaseId: $firebaseId){
-    success
+# mutation ($firebaseId: String!){
+#   deleteMember(firebaseId: $firebaseId){
+#     success
+#   }
+# }
+
+mutation deleteMemberProfile($id: ID!) {
+  updatemember(id: $id, data: { state: inactive }) {
+    email
+    state
   }
 }

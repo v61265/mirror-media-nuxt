@@ -2,6 +2,19 @@ import { camelizeKeys } from 'humps'
 import _ from 'lodash'
 import axios from 'axios'
 import qs from 'qs'
+import {
+  getMemberDetailData,
+  getMemberServiceRuleStatus,
+  setMemberServiceRuleStatusToTrue,
+  cancelMemberSubscription,
+  getMemberType,
+  getPaymentDataOfSubscription,
+  getMemberOneTimeSubscriptions,
+  getSubscriptionPayments,
+  getPremiumMemberShipStatus,
+  getPremiumMemberSubscriptionInfo,
+  updateSubscriptionFromMonthToYear,
+} from '~/utils/memberSubscription'
 
 import {
   API_TIMEOUT,
@@ -293,5 +306,39 @@ export default (context, inject) => {
         url: urlFetched,
       })
     }
+  })
+
+  inject('getMemberDetailData', async () => {
+    return await getMemberDetailData(context)
+  })
+  inject('getMemberServiceRuleStatus', async () => {
+    return await getMemberServiceRuleStatus(context)
+  })
+  inject('setMemberServiceRuleStatusToTrue', async () => {
+    return await setMemberServiceRuleStatusToTrue(context)
+  })
+  inject('cancelMemberSubscription', async (reason) => {
+    return await cancelMemberSubscription(context, reason)
+  })
+  inject('getMemberType', async () => {
+    return await getMemberType(context)
+  })
+  inject('getPaymentDataOfSubscription', async (gateWayPayload) => {
+    return await getPaymentDataOfSubscription(context, gateWayPayload)
+  })
+  inject('getMemberOneTimeSubscriptions', async (gateWayPayload) => {
+    return await getMemberOneTimeSubscriptions(context, gateWayPayload)
+  })
+  inject('getSubscriptionPayments', async (gateWayPayload) => {
+    return await getSubscriptionPayments(context, gateWayPayload)
+  })
+  inject('getPremiumMemberShipStatus', async (gateWayPayload) => {
+    return await getPremiumMemberShipStatus(context, gateWayPayload)
+  })
+  inject('getPremiumMemberSubscriptionInfo', async (gateWayPayload) => {
+    return await getPremiumMemberSubscriptionInfo(context, gateWayPayload)
+  })
+  inject('updateSubscriptionFromMonthToYear', async (subscriptionId) => {
+    return await updateSubscriptionFromMonthToYear(context, subscriptionId)
   })
 }

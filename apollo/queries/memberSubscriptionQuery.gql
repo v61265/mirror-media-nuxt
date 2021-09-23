@@ -1,0 +1,94 @@
+query fetchMemberSubscriptions($firebaseId: String!) {
+  member(where: { firebaseId: $firebaseId }) {
+    id
+    firebaseId
+    email
+    type
+    tos
+    subscription(orderBy: [{ periodEndDatetime: desc }]) {
+      id
+      orderNumber
+      frequency
+      periodFirstDatetime
+      postId
+      paymentMethod
+      oneTimeEndDatetime
+      isActive
+      periodEndDatetime
+      periodNextPayDatetime
+      newebpayPayment(orderBy: [{ paymentTime: desc }]) {
+        paymentMethod
+        paymentTime
+        amount
+        cardInfoLastFour
+      }
+    }
+  }
+}
+query fetchMemberBasicInfo($firebaseId: String!) {
+  member(where: { firebaseId: $firebaseId }) {
+    id
+    firebaseId
+    email
+    type
+    tos
+  }
+}
+
+query fetchOneTimeSubscriptions($firebaseId: String!) {
+  member(where: { firebaseId: $firebaseId }) {
+    email
+    subscription(
+      where: { frequency: one_time }
+      orderBy: [{ periodEndDatetime: desc }]
+    ) {
+      frequency
+      orderNumber
+      paymentMethod
+      postId
+      oneTimeEndDatetime
+    }
+  }
+}
+query fetchRecurringSubscription($firebaseId: String!) {
+  member(where: { firebaseId: $firebaseId }) {
+    email
+    type
+    subscription(
+      first: 1
+      where: { frequency_in: [yearly, monthly], isActive: true }
+      orderBy: [{ periodEndDatetime: desc }]
+    ) {
+      id
+      isCanceled
+      frequency
+      orderNumber
+      paymentMethod
+      periodEndDatetime
+      periodNextPayDatetime
+      newebpayPayment(orderBy: [{ paymentTime: desc }]) {
+        paymentMethod
+        cardInfoLastFour
+      }
+    }
+  }
+}
+
+query fetchSubscriptionPayments($firebaseId: String!) {
+  member(where: { firebaseId: $firebaseId }) {
+    email
+    subscription(orderBy: [{ periodEndDatetime: desc }]) {
+      orderNumber
+      frequency
+      periodEndDatetime
+      oneTimeEndDatetime
+      paymentMethod
+      newebpayPayment(orderBy: [{ paymentTime: desc }]) {
+        paymentMethod
+        paymentTime
+        amount
+        cardInfoLastFour
+      }
+    }
+  }
+}

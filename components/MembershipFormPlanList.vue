@@ -3,6 +3,7 @@
     <div class="membership-form__title">
       <h2 class="membership-form__title">訂購項目</h2>
       <UiSubscribeButtonSmall
+        v-if="!isUpgradeFromMonthToYear"
         title="更換方案"
         @click.native="() => $emit('back')"
       />
@@ -30,11 +31,15 @@ export default {
           {
             id: 1,
             detail: '鏡週刊 Premium 會員 (月方案)',
-            price: 99,
+            price: '原價 NT$99',
             newPrice: 49,
           },
         ]
       },
+    },
+    isUpgradeFromMonthToYear: {
+      type: Boolean,
+      default: false,
     },
   },
 }

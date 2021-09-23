@@ -4,8 +4,8 @@
       <h6 class="cancel-fail__title">取消訂閱失敗</h6>
       <div class="cancel-fail__description">
         <p>請重新操作或聯繫客服由專人為您服務。</p>
-        <p>service@mirrormedia.mg</p>
-        <p>02-6633-3805</p>
+        <p>MM-onlineservice@mirrormedia.mg</p>
+        <p>02-6633-3966</p>
       </div>
       <UiMembershipButtonPrimary
         class="cancel-fail__back"
@@ -21,6 +21,7 @@ import SubscribeWrapper from '~/components/SubscribeWrapper.vue'
 import UiMembershipButtonPrimary from '~/components/UiMembershipButtonPrimary.vue'
 
 export default {
+  middleware: ['handle-go-to-marketing'],
   components: { SubscribeWrapper, UiMembershipButtonPrimary },
   methods: {
     handleBack() {

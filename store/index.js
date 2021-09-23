@@ -9,7 +9,7 @@ export const mutations = {
 }
 
 export const actions = {
-  async nuxtServerInit({ commit, dispatch }, { res }) {
+  async nuxtServerInit({ commit, dispatch, state }, { res, app }) {
     if (res && res.locals && res.locals.user) {
       const { allClaims: claims, idToken: token, ...authUser } = res.locals.user
       commit('membership/ON_AUTH_STATE_CHANGED_MUTATION', {
@@ -17,6 +17,8 @@ export const actions = {
         claims,
         token,
       })
+
+      // await dispatch('membership-subscribe/FETCH_BASIC_INFO')
     }
 
     const sectionsResponse = await dispatch('fetchGlobalData')

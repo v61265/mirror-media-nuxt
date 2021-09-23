@@ -96,13 +96,17 @@ const service = ref()
 export function useMemberSubscribeMachine() {
   const { route } = useContext()
   if (!isMemberSubscribeFeatureToggled(route) || process.server) {
-    return {}
+    // mock object of bypass everything
+    return {
+      state: ref(new Proxy({}, { get: () => () => {} })),
+      send: () => {},
+    }
   }
 
   if (!service.value) {
-    const { store } = useContext()
+    const { store, app } = useContext()
     const router = useRouter()
-    const machine = createMachine(router, route, store)
+    const machine = createMachine(router, route, store, app.apolloProvider)
     const resolvedState = createResolvedState(machine)
     service.value = interpret(machine, {
       devTools: true,
@@ -112,6 +116,15 @@ export function useMemberSubscribeMachine() {
     }
     if (route.value.name === 'subscribe') {
       service.value.send('到方案購買頁')
+    }
+    if (route.value.name === 'profile-purchase') {
+      service.value.send('到付款紀錄頁')
+    }
+    if (route.value.name === 'subscribe-set') {
+      service.value.send('到付款設定頁')
+    }
+    if (route.value.name === 'subscribe-cancel-ask') {
+      service.value.send('到取消訂閱（原因詢問）頁')
     }
   }
   return useService(service.value)

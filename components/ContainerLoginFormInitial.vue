@@ -10,6 +10,9 @@
         class="federated-login__google"
       />
     </div>
+    <div v-if="showHint" class="login-form__hint">
+      {{ hint }}
+    </div>
     <div class="login-form__separator separator">
       <span>或</span>
     </div>
@@ -60,6 +63,14 @@ export default {
       type: String,
       default: '',
     },
+    showHint: {
+      type: Boolean,
+      default: false,
+    },
+    prevAuthMethod: {
+      type: String,
+      default: 'Google',
+    },
   },
   data() {
     return {
@@ -68,24 +79,66 @@ export default {
       isLoading: false,
     }
   },
+  computed: {
+    hint() {
+      let hint = ''
+      switch (this.prevAuthMethod) {
+        case 'Google':
+        case 'Facebook':
+          hint = `由於您曾以 ${this.prevAuthMethod} 帳號登入，請點擊上方「使用${this.prevAuthMethod}帳號繼續」重試。`
+          break
+
+        case 'email':
+          hint = `由於您曾以email帳號密碼登入，請輸入下方email重試。`
+      }
+
+      return hint
+    },
+  },
+
   methods: {
     async handleSubmit() {
       this.isSubmitButtonClicked = true
 
       this.isLoading = true
       try {
+        /*
+         * (handle email/password auth)
+         * determine which method( 3rd party auth like facebook/google, or password)
+         * is been used by this email before.
+         */
         const responseArray = await this.$fire.auth.fetchSignInMethodsForEmail(
           this.email
         )
 
+        /*
+         * Hint, If email verify is active in the future,
+         * responseArray would have multi value
+         */
         const isEmailExistWithEmailLinkSignInMethod =
-          responseArray?.[0] === 'emailLink'
+          responseArray &&
+          responseArray.find((signInMethod) => signInMethod === 'emailLink')
+
         const isEmailExistWithEmailPasswordSignInMethod =
-          responseArray?.[0] === 'password'
+          responseArray &&
+          responseArray.find((signInMethod) => signInMethod === 'password')
+
+        const isEmailHasBeenUsedByGoogleAuth =
+          responseArray &&
+          responseArray.find((signInMethod) => signInMethod === 'google.com')
+
+        const isEmailHasBeenUsedByFacebookAuth =
+          responseArray &&
+          responseArray.find((signInMethod) => signInMethod === 'facebook.com')
+
         if (isEmailExistWithEmailLinkSignInMethod) {
           this.$emit('verifyEmailSignInMethod', 'emailLink')
         } else if (isEmailExistWithEmailPasswordSignInMethod) {
           this.$emit('verifyEmailSignInMethod', 'password')
+        } else if (isEmailHasBeenUsedByGoogleAuth) {
+          this.$emit('verifyEmailSignInMethod', 'google.com')
+        } else if (isEmailHasBeenUsedByFacebookAuth) {
+          this.$emit('verifyEmailSignInMethod', 'facebook.com')
         } else {
           this.$emit('goToRegister')
         }
@@ -116,6 +169,13 @@ export default {
     padding: 32px 48px 24px;
   }
 
+  &__hint {
+    font-size: 16px;
+    line-height: 150%;
+    text-align: center;
+    color: #e51731;
+    margin: 12px 0 24px 0;
+  }
   &__separator {
     margin: 16px 0 0 0;
   }

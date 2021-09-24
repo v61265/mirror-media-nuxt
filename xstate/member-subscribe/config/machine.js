@@ -10,15 +10,12 @@ export default {
   context: {
     // true, false
     isLoggedIn: false,
-    isTosAgreed: false,
-    isEmailVerified: false,
 
     // null, 'post', '月訂閱', '年訂閱'
     subscription: null,
 
     // null, '解鎖這篇報導', '月訂閱', '年訂閱'
     subscriptionOrder: null,
-    subscriptionOrderOneTimePostId: null,
 
     redirectDestination: undefined,
 
@@ -78,11 +75,7 @@ export default {
                 },
                 解鎖這篇報導: {
                   target: '#登入功能（獨立頁或 lightbox）',
-                  actions: [
-                    'orderSubscribe',
-                    'setRedirectToForm',
-                    'orderSubscribeOneTimePostId',
-                  ],
+                  actions: ['orderSubscribe', 'setRedirectToForm'],
                 },
                 立即登入: {
                   target: '#登入功能（獨立頁或 lightbox）',
@@ -131,10 +124,7 @@ export default {
                     加入Premium會員: '#方案購買流程',
                     解鎖這篇報導: {
                       target: '#方案購買流程',
-                      actions: [
-                        'orderSubscribe',
-                        'orderSubscribeOneTimePostId',
-                      ],
+                      actions: ['orderSubscribe'],
                     },
                   },
                 },
@@ -278,94 +268,16 @@ export default {
             },
             確認訂購頁: {
               id: '確認訂購頁',
-              initial: '起點',
-              states: {
-                起點: {
-                  on: {
-                    '': [
-                      {
-                        target: '信箱驗證頁',
-                        cond: '是否未驗證信箱',
-                      },
-                      {
-                        target: '服務條款頁',
-                        cond: '是否未同意服務條款',
-                      },
-                      {
-                        target: '確認訂購表單頁',
-                      },
-                    ],
-                  },
-                },
-                確認訂購表單頁: {
-                  entry: ['navigateToSubscribeInfo'],
-                  initial: '起點',
-                  states: {
-                    起點: {
-                      on: {
-                        '': [
-                          {
-                            target: '準備將月訂閱升級年訂閱',
-                            cond: '訂購方案為月訂閱升級年訂閱',
-                          },
-                          {
-                            target: '準備單篇訂閱',
-                            cond: '訂購方案為單篇訂閱',
-                          },
-                          {
-                            target: '準備月訂閱',
-                            cond: '訂購方案為月訂閱',
-                          },
-                          {
-                            target: '準備年訂閱',
-                            cond: '訂購方案為年訂閱',
-                          },
-                        ],
-                      },
-                    },
-                    準備單篇訂閱: {},
-                    準備月訂閱: {},
-                    準備年訂閱: {},
-                    準備將月訂閱升級年訂閱: {},
-                  },
-                  on: {
-                    付款: {
-                      target: '#付款中',
-                    },
-                  },
-                },
-                信箱驗證頁: {
-                  id: '信箱驗證頁',
-                  entry: ['navigateToEmailVerify'],
-                  type: 'final',
-                  on: {
-                    假裝驗證信箱並繼續流程: undefined,
-                  },
-                },
-                服務條款頁: {
-                  id: '服務條款頁',
-                  entry: ['navigateToServiceRule'],
-                  on: {
-                    同意服務條款並繼續: {
-                      target: '起點',
-                      actions: ['agreeTos'],
-                    },
-                  },
-                },
-              },
-            },
-            付款中: {
-              id: '付款中',
+              entry: ['navigateToSubscribeInfo'],
               on: {
                 付款成功: {
-                  target: '#付款成功頁',
+                  target: '付款成功頁',
                   actions: ['subscribe'],
                 },
-                付款失敗: '#付款失敗頁',
+                付款失敗: '付款失敗頁',
               },
             },
             付款成功頁: {
-              id: '付款成功頁',
               entry: ['navigateToSubscribeSuccess'],
               initial: '起點',
               states: {
@@ -388,16 +300,12 @@ export default {
                   },
                 },
                 不是從會員文章頁來的: {
-                  type: 'final',
-
-                  /*
-                   * on: {
-                   *   '瀏覽 Premium 會員文章': {
-                   *     actions: ['navigateToSectionMember'],
-                   *   },
-                   *   回訂閱紀錄: '#付款紀錄頁',
-                   * },
-                   */
+                  on: {
+                    '瀏覽 Premium 會員文章': {
+                      actions: ['navigateToSectionMember'],
+                    },
+                    回訂閱紀錄: '#付款紀錄頁',
+                  },
                 },
               },
 
@@ -417,7 +325,6 @@ export default {
                */
             },
             付款失敗頁: {
-              id: '付款失敗頁',
               entry: ['navigateToSubscribeFail'],
               on: {
                 回前頁: '確認訂購頁',
@@ -471,10 +378,6 @@ export default {
                         cond: '是年訂閱的會員',
                       },
                       {
-                        target: '已登入（已訂閱但取消下期）',
-                        cond: '是訂閱但取消下期的會員',
-                      },
-                      {
                         target: '已登入（無購買紀錄）',
                       },
                     ],
@@ -500,63 +403,49 @@ export default {
                   },
                 },
                 '已登入（已訂閱月方案）': {
-                  on: {
-                    升級年訂閱: '#方案購買流程',
-                    付款設定: '#付款設定頁',
+                  initial: '起點',
+                  states: {
+                    起點: {
+                      on: {
+                        年訂閱: {
+                          name: '升級為年方案',
+                          target: '升級年方案快速提示',
+                          actions: ['orderSubscribe'],
+                        },
+                        付款設定: '#付款設定頁',
+                      },
+                    },
+                    升級年方案快速提示: {
+                      initial: '起點',
+                      states: {
+                        起點: {
+                          on: {
+                            確認升級: '升級中',
+                          },
+                        },
+                        升級中: {
+                          on: {
+                            升級成功: {
+                              target: '升級成功',
+                              actions: ['subscribe'],
+                            },
+                            升級失敗: '升級失敗',
+                          },
+                        },
+                        升級成功: {
+                          on: {
+                            回付款紀錄頁: '#付款紀錄頁',
+                          },
+                        },
+                        升級失敗: {
+                          on: {
+                            返回: '起點',
+                          },
+                        },
+                      },
+                    },
                   },
                 },
-                '已登入（已訂閱但取消下期）': {
-                  on: {
-                    付款設定: '#付款設定頁',
-                  },
-                },
-
-                /*
-                 * '已登入（已訂閱月方案）': {
-                 *   initial: '起點',
-                 *   states: {
-                 *     起點: {
-                 *       on: {
-                 *         年訂閱: {
-                 *           name: '升級為年方案',
-                 *           target: '升級年方案快速提示',
-                 *           actions: ['orderSubscribe'],
-                 *         },
-                 *         付款設定: '#付款設定頁',
-                 *       },
-                 *     },
-                 *     升級年方案快速提示: {
-                 *       initial: '起點',
-                 *       states: {
-                 *         起點: {
-                 *           on: {
-                 *             確認升級: '升級中',
-                 *           },
-                 *         },
-                 *         升級中: {
-                 *           on: {
-                 *             升級成功: {
-                 *               target: '升級成功',
-                 *               actions: ['subscribe'],
-                 *             },
-                 *             升級失敗: '升級失敗',
-                 *           },
-                 *         },
-                 *         升級成功: {
-                 *           on: {
-                 *             回付款紀錄頁: '#付款紀錄頁',
-                 *           },
-                 *         },
-                 *         升級失敗: {
-                 *           on: {
-                 *             返回: '起點',
-                 *           },
-                 *         },
-                 *       },
-                 *     },
-                 *   },
-                 * },
-                 */
                 '已登入（已訂閱年方案）': {
                   on: {
                     付款設定: '#付款設定頁',
@@ -608,10 +497,6 @@ export default {
                         cond: '是年訂閱的會員',
                       },
                       {
-                        target: '正處於月或年訂閱狀態',
-                        cond: '是訂閱但取消下期的會員',
-                      },
-                      {
                         target: '#付款紀錄頁',
                       },
                     ],
@@ -636,7 +521,6 @@ export default {
         '取消訂閱（原因詢問）頁': {
           id: '取消訂閱（原因詢問）頁',
           initial: '起點',
-          entry: ['navigateToSubscribeCancelAsk'],
           states: {
             起點: {
               on: {
@@ -666,34 +550,29 @@ export default {
                   on: {
                     '': [
                       {
-                        target: '正處於訂閱狀態',
+                        target: '正處於月或年訂閱狀態',
                         cond: '是月訂閱的會員',
                       },
                       {
-                        target: '正處於訂閱狀態',
+                        target: '正處於月或年訂閱狀態',
                         cond: '是年訂閱的會員',
-                      },
-                      {
-                        target: '正處於訂閱狀態',
-                        cond: '是訂閱但取消下期的會員',
                       },
                       {
                         target: '#付款紀錄頁',
                       },
                     ],
-                    '是 app 訂閱的會員': '正處於 app 訂閱狀態',
                   },
                 },
-                正處於訂閱狀態: {
+                正處於月或年訂閱狀態: {
                   on: {
                     確認取消訂閱成功: {
                       target: '#取消訂閱（原因詢問）頁.取消成功',
-                      actions: ['cancelSubscribe'],
+
+                      // actions: ['cancelSubscribe']
                     },
                     確認取消訂閱失敗: '#取消訂閱（原因詢問）頁.取消失敗',
                   },
                 },
-                '正處於 app 訂閱狀態': {},
               },
 
               /*
@@ -703,13 +582,11 @@ export default {
                */
             },
             取消成功: {
-              entry: ['navigateToSubscribeCancelSuccess'],
               on: {
                 回訂閱紀錄: '#付款紀錄頁',
               },
             },
             取消失敗: {
-              entry: ['navigateToSubscribeCancelFail'],
               on: {
                 回訂閱紀錄: '#付款紀錄頁',
               },

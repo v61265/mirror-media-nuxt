@@ -3,7 +3,7 @@
     <SubscribeStepProgress :currentStep="3" />
     <div class="subscribe-success">
       <div class="subscribe-success__message">
-        {{ successMessage }}
+        您已完成付款，以下為本次訂購資訊，已同步寄送至您的信箱。
       </div>
       <div class="subscribe-success__info">
         <h1 class="subscribe-success__info_title">訂單資訊</h1>
@@ -40,14 +40,17 @@
             title="回購買文章頁"
             @click.native="sendMembershipSubscribe('回購買文章頁')"
           />
-          <a v-else href="/section/member">
-            <UiSubscribeButton title="瀏覽 Premium 會員文章" />
-          </a>
-          <a href="/profile/purchase?ms=true">
-            <UiMembershipButtonSecondary>
+          <template v-else>
+            <UiSubscribeButton
+              title="瀏覽 Premium 會員文章"
+              @click.native="sendMembershipSubscribe('瀏覽 Premium 會員文章')"
+            />
+            <UiMembershipButtonSecondary
+              @click.native="sendMembershipSubscribe('回訂閱紀錄')"
+            >
               回訂閱紀錄
             </UiMembershipButtonSecondary>
-          </a>
+          </template>
         </div>
       </div>
     </div>
@@ -75,10 +78,8 @@ import UiMembershipButtonSecondary from '~/components/UiMembershipButtonSecondar
 import { ENV } from '~/configs/config'
 
 export default {
-  middleware: ['handle-go-to-marketing'],
   setup() {
     const { state, send } = useMemberSubscribeMachine()
-    send('付款成功')
     return {
       stateMembershipSubscribe: state,
       sendMembershipSubscribe: send,
@@ -105,17 +106,9 @@ export default {
 
       // TODO: remove due to not use anymore
       hasLink: false,
-      isUpgradeFromMonthToYear: true,
     }
   },
   computed: {
-    successMessage() {
-      if (this.isUpgradeFromMonthToYear) {
-        return '您已完成變更方案，以下為本次變更資訊，您的新方案將於下期開始進行。'
-      } else {
-        return '您已完成付款，以下為本次訂購資訊，已同步寄送至您的信箱。'
-      }
-    },
     showSim() {
       return ENV !== 'prod'
     },

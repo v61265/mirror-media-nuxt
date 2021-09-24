@@ -52,7 +52,6 @@
       <UiArticleBody
         ref="articleBody"
         class="culture-post__article-body"
-        :postId="post.id"
         :brief="post.brief"
         :content="post.content"
         :pageState="articleBodyPageState"
@@ -135,7 +134,6 @@ export default {
     }),
     post() {
       const {
-        id = '',
         title = '',
         brief = {},
         writers = [],
@@ -159,7 +157,6 @@ export default {
       const heroImgsResized = heroImage.image?.resizedTargets || {}
 
       return {
-        id,
         title,
         writers,
         extendByline,

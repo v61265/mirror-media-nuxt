@@ -1,155 +1,192 @@
 <template>
   <div class="purchase">
-    <ClientOnly>
-      <h1 class="purchase__title">訂閱紀錄</h1>
-      <SubscribeWrapper v-if="memberShipStatusName !== 'not-at-all'">
-        <MemberShipStatus
-          :isMobile="isMobile"
-          :memberShipStatus="memberShipStatus"
-          :isPremium="isPremium"
-          @upgradeInSinglePost="sendMembershipSubscribe('升級Premium會員')"
-          @upgradeToSubscribeYearly="sendMembershipSubscribe('升級年訂閱')"
-          @navigateToSubscribeSet="handleNavigateToSubscribeSet"
-        />
-        <MembershipPosts
-          v-if="postList.length && !isPremium"
-          :postList="showedPostList"
-          :showMorePostButton="showMorePostButton"
-          @load-more-post="handleMorePost"
-        />
-        <MembershipPayRecord
-          v-if="payRecords.length"
-          :payRecords="showedPayRecords"
-          :isMobile="isMobile"
-          :showMorePayRecordButton="showMorePayRecordButton"
-          @load-more-record="handleMoreRecord"
-        />
-      </SubscribeWrapper>
-      <div v-else>
-        <div class="purchase__message">找不到相關紀錄</div>
-        <div class="purchase__upgrade">
-          <div class="purchase__upgrade_title">
-            準備好升級為鏡週刊 Premium 會員了嗎？
-          </div>
-          <div class="purchase__upgrade_content">
-            限時優惠每月$49元，優質報導零廣告看到飽
-          </div>
-          <UiMembershipButtonPrimary
-            @click.native="sendMembershipSubscribe('升級Premium會員')"
-          >
-            升級 Premium 會員
-          </UiMembershipButtonPrimary>
+    <h1 class="purchase__title">訂閱紀錄</h1>
+    <SubscribeWrapper v-if="memberShipStatus.name !== 'not-at-all'">
+      <MemberShipStatus
+        :isMobile="isMobile"
+        :memberShipStatus="memberShipStatus"
+        :isPremium="isPremium"
+      />
+      <MembershipPosts
+        v-if="postList.length && !isPremium"
+        :postList="postList"
+        :showMorePostButton="showMorePostButton"
+        @load-more-post="handleMorePost"
+      />
+      <MembershipPayRecord
+        v-if="payRecords.length"
+        :payRecords="payRecords"
+        :isMobile="isMobile"
+        :showMorePayRecordButton="showMorePayRecordButton"
+        @load-more-record="handleMoreRecord"
+      />
+    </SubscribeWrapper>
+    <template v-else>
+      <div class="purchase__message">找不到相關紀錄</div>
+      <div class="purchase__upgrade">
+        <div class="purchase__upgrade_title">
+          準備好升級為鏡週刊 Premium 會員了嗎？
         </div>
+        <div class="purchase__upgrade_content">
+          每月 $49 元，暢享專區零廣告閱讀、優質報導看到飽
+        </div>
+        <a href="/subscribe">
+          <UiMembershipButtonPrimary
+            >升級 Premium 會員</UiMembershipButtonPrimary
+          ></a
+        >
       </div>
-    </ClientOnly>
+    </template>
+    <MembershipSimFormStatus
+      v-if="showSimFormStatus"
+      @change-status="setMembershipStatus"
+    />
   </div>
 </template>
 
 <script>
-import { computed } from '@nuxtjs/composition-api'
-
+import { ENV } from '~/configs/config'
 import SubscribeWrapper from '~/components/SubscribeWrapper.vue'
 import MemberShipStatus from '~/components/MemberShipStatus.vue'
 import MembershipPosts from '~/components/MembershipPosts.vue'
 import MembershipPayRecord from '~/components/MembershipPayRecord.vue'
+import MembershipSimFormStatus from '~/components/MembershipSimFormStatus.vue'
 import UiMembershipButtonPrimary from '~/components/UiMembershipButtonPrimary.vue'
-import { useMemberSubscribeMachine } from '~/xstate/member-subscribe/compositions'
 
 export default {
-  middleware: ['handle-go-to-marketing'],
   components: {
     SubscribeWrapper,
     MemberShipStatus,
     MembershipPosts,
     MembershipPayRecord,
+    MembershipSimFormStatus,
     UiMembershipButtonPrimary,
   },
-  setup() {
-    const { state, send } = useMemberSubscribeMachine()
-    const memberShipStatusName = useMemberShipStatusName()
-    return {
-      stateMembershipSubscribe: state,
-      sendMembershipSubscribe: send,
-      memberShipStatusName,
-      handleNavigateToSubscribeSet() {
-        window.location.assign('/subscribe/set?ms=true')
-      },
-    }
-    function useMemberShipStatusName() {
-      const { state } = useMemberSubscribeMachine()
-      const memberShipStatusName = computed(() =>
-        computeMemberShipStatusName(state?.value)
-      )
-      return memberShipStatusName
-
-      function computeMemberShipStatusName(state) {
-        const parentState = '會員訂閱功能.付款紀錄頁.已登入'
-        if (state?.matches(`${parentState}.已登入（無購買紀錄）`)) {
-          return 'not-at-all'
-        } else if (state?.matches(`${parentState}.已登入（只有單篇購買過）`)) {
-          return 'single-post'
-        } else if (state?.matches(`${parentState}.已登入（已訂閱月方案）`)) {
-          return 'month'
-        } else if (state?.matches(`${parentState}.已登入（已訂閱年方案）`)) {
-          return 'year'
-        } else if (
-          state?.matches(`${parentState}.已登入（已訂閱但取消下期）`)
-        ) {
-          return 'disturb'
-        } else {
-          return 'not-at-all'
-        }
-      }
-    }
-  },
-
   data() {
     return {
-      postList: [],
-      postMetaCount: 5,
-      payRecords: [],
-      payRecordMetaCount: 4,
-      isMobile: false,
       memberShipStatus: {
-        name: 'not-at-all',
+        name: 'single-post',
         dueDate: null,
         nextPayDate: null,
         payMethod: null,
       },
-    }
-  },
-  computed: {
-    showMorePostButton() {
-      return this.postMetaCount < this.postList.length
-    },
-    showMorePayRecordButton() {
-      return this.payRecordMetaCount < this.payRecords.length
-    },
-    isPremium() {
-      const status = this.memberShipStatusName
-      return status === 'year' || status === 'month' || status === 'disturb'
-    },
-    showedPostList() {
-      return this.postList.slice(0, this.postMetaCount)
-    },
-    showedPayRecords() {
-      return this.payRecords.slice(0, this.payRecordMetaCount)
-    },
-  },
-
-  async created() {
-    try {
-      if (this.isPremium) {
-        // fetch recurring subscription's duration
-        this.memberShipStatus = await this.$getPremiumMemberShipStatus()
-      } else {
-        // fetch onetime subscription list
-        this.postList = await this.$getMemberOneTimeSubscriptions({})
-      }
-
-      this.payRecords = await this.$getSubscriptionPayments({})
-    } catch (error) {
-      console.error(error)
+      postList: [
+        {
+          id: 1,
+          title: '【搞懂特別股】股神也押寶大賺　特別股成投資市場新寵',
+          href: '/',
+          deadline: '2022/12/3 15:02',
+        },
+        {
+          id: 2,
+          title: '【全文】當蘋果落下　香港新聞自由告終',
+          href: '/',
+          deadline: '2021/5/29 12:29',
+        },
+        {
+          id: 3,
+          title: '【鏡相人間】臉被偷走之後　台灣Deepfake事件獨家調查',
+          href: '/',
+          deadline: '2022/12/3 15:02',
+        },
+        {
+          id: 4,
+          title: '【名媛教育番外篇】孫怡談台灣《Vogue》改版：紙本才是實驗場！',
+          href: '/',
+          deadline: '2022/12/3 15:02',
+        },
+        {
+          id: 5,
+          title: '【國安法下的香港人3】香港的膏肓　阿樂',
+          href: '/',
+          deadline: '2022/12/3 15:02',
+        },
+      ],
+      postMetaCount: 6,
+      payRecords: [
+        {
+          number: 'M202107160001',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '(1092)',
+          price: 490,
+        },
+        {
+          number: 'M202107160002',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '1092',
+          price: 490,
+        },
+        {
+          number: 'M202107160003',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '1092',
+          price: 490,
+        },
+        {
+          number: 'M202107160001',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '(1092)',
+          price: 490,
+        },
+        {
+          number: 'M202107160001',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '(1092)',
+          price: 490,
+        },
+        {
+          number: 'M202107160001',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '(1092)',
+          price: 490,
+        },
+        {
+          number: 'M202107160001',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '(1092)',
+          price: 490,
+        },
+        {
+          number: 'M202107160001',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '(1092)',
+          price: 490,
+        },
+        {
+          number: 'M202107160001',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '(1092)',
+          price: 490,
+        },
+        {
+          number: 'M202107160001',
+          date: '2022/12/29',
+          type: '年訂閱',
+          method: '信用卡自動續扣',
+          methodNote: '(1092)',
+          price: 490,
+        },
+      ],
+      payRecordMetaCount: 11,
+      isMobile: false,
     }
   },
   mounted() {
@@ -157,12 +194,68 @@ export default {
       this.isMobile = true
     }
   },
+  computed: {
+    showMorePostButton() {
+      return this.postMetaCount > this.postList.length
+    },
+    showMorePayRecordButton() {
+      return this.payRecordMetaCount > this.payRecords.length
+    },
+    showSimFormStatus() {
+      return ENV !== 'prod'
+    },
+    isPremium() {
+      const status = this.memberShipStatus.name
+      return status === 'year' || status === 'month' || status === 'disturb'
+    },
+  },
   methods: {
     handleMorePost() {
-      this.postMetaCount += 5
+      this.postList.push({
+        id: 6,
+        title: '【鏡相人間】臉被偷走之後　台灣Deepfake事件獨家調查',
+        href: '/',
+        deadline: '2022/12/3 15:02',
+      })
     },
     handleMoreRecord() {
-      this.payRecordMetaCount += 5
+      this.payRecords.push({
+        number: 'M202107160001',
+        date: '2022/12/29',
+        type: '年訂閱',
+        method: '信用卡自動續扣',
+        methodNote: '(1092)',
+        price: 490,
+      })
+    },
+    setMembershipStatus(val) {
+      this.memberShipStatus.name = val
+      switch (val) {
+        case 'year':
+          this.memberShipStatus = {
+            name: 'year',
+            dueDate: '至 2022/12/29',
+            nextPayDate: '2022/7/30',
+            payMethod: '信用卡自動續扣(2924)',
+          }
+          break
+        case 'month':
+          this.memberShipStatus = {
+            name: 'month',
+            dueDate: '至 2022/12/29',
+            nextPayDate: '2022/7/30',
+            payMethod: '信用卡自動續扣(2924)',
+          }
+          break
+        case 'disturb':
+          this.memberShipStatus = {
+            name: 'disturb',
+            dueDate: '至 2022/12/29',
+            nextPayDate: null,
+            payMethod: null,
+          }
+          break
+      }
     },
   },
 }

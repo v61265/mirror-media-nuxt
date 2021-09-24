@@ -17,7 +17,6 @@
             v-model="email"
             type="text"
             placeholder="name@example.com"
-            :disabled="!alterableEmail"
             @input="$v.email.$touch"
           />
           <div
@@ -53,7 +52,7 @@
               v-if="!isLoading && status === 'fail'"
               class="validate-email__wrapper_form_status_error"
             >
-              {{ failInfo }}
+              Email 寄出失敗，請重新再試
             </div>
           </template>
         </div>
@@ -73,9 +72,6 @@
       :orderStatus="status"
       :setOrderStatus="setOrderStatus"
     />
-    <button class="sim-for-alterable" @click="toggleAlterable">
-      toggle alterable
-    </button>
   </div>
 </template>
 
@@ -85,21 +81,12 @@ import MembershipInfoSim from '~/components/MembershipInfoSim.vue'
 import UiMembershipLoadingIcon from '~/components/UiMembershipLoadingIcon.vue'
 import UiMembershipButtonPrimary from '~/components/UiMembershipButtonPrimary.vue'
 import { ENV } from '~/configs/config'
-import actionCodeSettingsAppConfig from '~/constants/firebase-action-code-settings-app-config'
-import { useMemberSubscribeMachine } from '~/xstate/member-subscribe/compositions'
 
 export default {
   components: {
     UiMembershipButtonPrimary,
     MembershipInfoSim,
     UiMembershipLoadingIcon,
-  },
-  setup() {
-    const { state, send } = useMemberSubscribeMachine()
-    return {
-      stateMembershipSubscribe: state,
-      sendMembershipSubscribe: send,
-    }
   },
   data() {
     return {
@@ -109,8 +96,6 @@ export default {
       hasSend: false,
       validateOn: true,
       frozenTime: 0,
-      alterableEmail: true,
-      failInfo: 'Email 寄出失敗，請重新再試',
     }
   },
   validations: {
@@ -122,9 +107,7 @@ export default {
   computed: {
     isDisable() {
       const validate =
-        !this.validateOn ||
-        (this.$v.email.email && this.$v.email.required) ||
-        !this.alterableEmail
+        !this.validateOn || (this.$v.email.email && this.$v.email.required)
       return !validate || this.isCounting
     },
     showSimFormStatus() {
@@ -138,31 +121,12 @@ export default {
       return `重新寄送...(${this.frozenTime} 秒)`
     },
   },
-  mounted() {
-    const currentUser = this.$fire.auth.currentUser
-    this.email = currentUser.email
-    const { providerData } = currentUser
-    let isReadOnly = false
-    providerData.forEach((provider) => {
-      const logFrom = provider.providerId
-
-      if (logFrom === 'password') {
-        isReadOnly = true
-      }
-    })
-
-    this.alterableEmail = !isReadOnly
-  },
-
   methods: {
     setValidateOn() {
       this.validateOn = !this.validateOn
     },
     setOrderStatus(val) {
       this.status = val
-    },
-    toggleAlterable() {
-      this.alterableEmail = !this.alterableEmail
     },
     countDown() {
       this.frozenTime = 30
@@ -173,83 +137,15 @@ export default {
         }
       }, 1000)
     },
-    async handleSubmit() {
+    handleSubmit() {
       if (this.isLoading || this.isDisable) return
       this.isLoading = true
-
-      const currentUser = this.$fire.auth.currentUser
-      if (currentUser?.emailVerified) {
-        // Although this page is not accessable when user.email has been verified, still check it just in case
-        this.isLoading = false
-        return
-      }
-
-      try {
-        if (currentUser.email !== this.email || !currentUser.email) {
-          // send verify email and update it
-          await currentUser.verifyBeforeUpdateEmail(
-            this.email,
-            this.createActionCodeSettings()
-          )
-        } else {
-          // send verify email
-          await currentUser.sendEmailVerification(
-            this.createActionCodeSettings()
-          )
-        }
-
-        // 驗證信發送完成
+      window.setTimeout(() => {
         this.isLoading = false
         this.hasSend = true
-        this.status = 'success'
+        if (this.status !== 'success') return
         this.countDown()
-        window.alert('驗證信已發送到您的信箱，請查收。')
-        this.sendMembershipSubscribe('假裝驗證信箱並繼續流程')
-      } catch (error) {
-        // 驗證信發送失敗
-        this.hasSend = true
-        this.isLoading = false
-        this.status = 'fail'
-        console.log(error.message)
-
-        if (
-          error.message ===
-          'The email address is already in use by another account.'
-        ) {
-          this.failInfo =
-            '此 Email 已經被註冊，若您是這個 Email 的擁有者，請重新以 Google 帳號登入'
-        } else {
-          this.failInfo = 'Email 寄出失敗，請重新再試'
-        }
-      }
-    },
-    createActionCodeSettings() {
-      return {
-        /*
-         * URL you want to redirect back to. The domain (www.example.com) for this
-         * URL must be in the authorized domains list in the Firebase Console.
-         */
-        url: createUrl(this.email),
-
-        // This must be true.
-        handleCodeInApp: true,
-
-        ...actionCodeSettingsAppConfig,
-      }
-
-      function createUrl(email) {
-        const origin = window.location.origin
-        const path = '/verify-success'
-
-        /*
-         * when verified and redirect to verify-success page,
-         * we need this email to check which page-state should show
-         * (for more detail, see pages/verify-success.vue)
-         */
-
-        const queryString = email ? `?email=${email}` : ''
-        return `${origin}${path}${queryString}`
-      }
+      }, 3000)
     },
   },
 }
@@ -318,7 +214,7 @@ export default {
         font-size: 18px;
         line-height: 25px;
         &::placeholder {
-          color: rgba(0, 0, 0, 0.2);
+          color: rgb(227, 227, 227);
         }
       }
     }
@@ -353,23 +249,5 @@ export default {
 
 .error input {
   border: 1px solid #e51731 !important;
-}
-
-.sim-for-alterable {
-  z-index: 9999;
-  position: fixed;
-  top: 185px;
-  right: 0;
-  padding: 10px;
-  border: 1px solid black;
-  background: rgba(5, 79, 119, 0.3);
-  border-radius: 5px;
-  button:focus {
-    outline: 0 !important;
-  }
-}
-
-button:focus {
-  outline: 0 !important;
 }
 </style>

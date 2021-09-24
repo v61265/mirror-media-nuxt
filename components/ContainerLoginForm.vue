@@ -4,8 +4,6 @@
       v-if="state === 'initial'"
       :isFederatedRedirectResultLoading="isFederatedRedirectResultLoading"
       :email.sync="email"
-      :showHint="showHint"
-      :prevAuthMethod="prevAuthMethod"
       @verifyEmailSignInMethod="handleVerifyEmailSignInMethod"
       @goToRegister="handleGoToRegister"
     />
@@ -62,14 +60,6 @@ export default {
       type: Boolean,
       default: true,
     },
-    showHint: {
-      type: Boolean,
-      default: false,
-    },
-    prevAuthMethod: {
-      type: String,
-      default: '',
-    },
   },
   data() {
     return {
@@ -83,27 +73,9 @@ export default {
         case 'emailLink':
           this.state = 'recoverPassword'
           break
-
         case 'password':
           this.state = 'login'
-          this.$emit('setPrevAuthMethod', 'email')
-          this.$emit('setShowHint', true)
           break
-
-        case 'google.com':
-          this.$emit('setPrevAuthMethod', 'Google')
-          this.$emit('setShowHint', true)
-          this.email = '' // clear email input field (TODO)
-
-          break
-
-        case 'facebook.com':
-          this.$emit('setPrevAuthMethod', 'Facebook')
-          this.$emit('setShowHint', true)
-          this.email = '' // clear email input field (TODO)
-
-          break
-
         default:
           this.state = 'initial'
           break
@@ -114,7 +86,6 @@ export default {
     },
     handleBackToInitial() {
       this.state = 'initial'
-      this.$emit('setShowHint', false)
     },
   },
 }

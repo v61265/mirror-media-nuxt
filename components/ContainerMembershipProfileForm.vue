@@ -178,9 +178,6 @@
     >
       刪除會員
     </a>
-    <p class="cancel-membership-hint">
-      提醒您，若您有訂閱會員專區單篇文章，刪除帳號可能導致無法閱讀文章
-    </p>
   </div>
 </template>
 
@@ -192,13 +189,13 @@ import twDistrictsData from 'mirror-media-constants/lib/taiwan-districts.json'
 import dayjs from 'dayjs'
 import UiMembershipDropdownMenu from '~/components/UiMembershipDropdownMenu.vue'
 import userUpdate from '~/apollo/mutations/userUpdate.gql'
-import { fetchMemberProfile } from '~/apollo/queries/userQuery.gql'
+import userQuery from '~/apollo/queries/userQuery.gql'
 
 export default {
   apollo: {
-    $client: 'memberSubscription',
+    $client: 'userClient',
     member: {
-      query: fetchMemberProfile,
+      query: userQuery,
       fetchPolicy: 'no-cache',
       variables() {
         return {
@@ -221,20 +218,17 @@ export default {
           } else {
             switch (gender) {
               case 'A_1':
-              case 'M':
                 return '男'
               case 'A_2':
-              case 'F':
                 return '女'
               case 'A_3':
-              case 'NA':
                 return '不透露'
               default:
                 return null
             }
           }
         }
-        this.id = data?.member?.id
+
         this.name = data?.member?.name ?? null
 
         const gender = getGender(data?.member?.gender)
@@ -323,7 +317,6 @@ export default {
   },
   data() {
     return {
-      id: undefined,
       name: undefined,
       gender: undefined,
       genderDefaultIndex: undefined,
@@ -502,11 +495,11 @@ export default {
       const getGender = () => {
         switch (this.gender) {
           case '不透露':
-            return 'NA'
+            return 3
           case '男':
-            return 'M'
+            return 1
           case '女':
-            return 'F'
+            return 2
           default:
             return null
         }
@@ -551,11 +544,10 @@ export default {
       }
 
       return {
-        // firebaseId: this.$store.state.membership.userUid,
-        id: this.id,
+        firebaseId: this.$store.state.membership.userUid,
         name: this.name || '',
-        gender: getGender() || 'NA',
-        birthday: getBirthday() || '',
+        gender: getGender() || 0,
+        birthday: getBirthday(),
         phone: this.phone || '',
         country: getAddress().country || '',
         city: getAddress().city || '',
@@ -727,7 +719,6 @@ export default {
   color: #d0021b;
   font-size: 18px;
   font-weight: 700;
-  margin-bottom: 12px;
 }
 
 .update-password-button {
@@ -749,13 +740,5 @@ export default {
       #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.66);
   }
-}
-
-.cancel-membership-hint {
-  font-style: normal;
-  font-weight: normal;
-  font-size: 16px;
-  line-height: 24px;
-  color: #888888;
 }
 </style>

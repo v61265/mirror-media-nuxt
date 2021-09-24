@@ -1,8 +1,7 @@
 <template>
   <section class="page">
-    <ContainerMembershipCancelHoldUp v-if="pageState === 'holdUp'" />
     <ContainerMembershipCancelPleaseConfirm
-      v-else-if="pageState === 'confirmation'"
+      v-if="pageState === 'confirmation'"
       @success="handleCancelSuccess"
       @error="handleCancelError"
     />
@@ -15,32 +14,17 @@
 </template>
 
 <script>
-import ContainerMembershipCancelHoldUp from '~/components/ContainerMembershipCancelHoldUp.vue'
 import ContainerMembershipCancelPleaseConfirm from '~/components/ContainerMembershipCancelPleaseConfirm.vue'
 import ContainerMembershipCancelSuccess from '~/components/ContainerMembershipCancelSuccess.vue'
 import ContainerMembershipCancelError from '~/components/ContainerMembershipCancelError.vue'
 
 export default {
   components: {
-    ContainerMembershipCancelHoldUp,
     ContainerMembershipCancelPleaseConfirm,
     ContainerMembershipCancelSuccess,
     ContainerMembershipCancelError,
   },
   middleware: ['authenticate'],
-  async asyncData(context) {
-    const memberType = await context.$getMemberType()
-
-    const isPremiumOrVip =
-      memberType === 'year' ||
-      memberType === 'month' ||
-      memberType === 'marketing'
-    if (isPremiumOrVip) {
-      return {
-        pageState: 'holdUp',
-      }
-    }
-  },
   data() {
     return {
       pageState: 'confirmation',
@@ -64,10 +48,7 @@ export default {
   min-height: calc(100vh - 118px);
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
-  @include media-breakpoint-up(xl) {
-    padding-top: 20px;
-  }
 }
 </style>

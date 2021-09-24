@@ -22,8 +22,6 @@ export const mutations = {
       if (Object.keys(claims).length !== 0) {
         const { firebase } = claims
         state.userSignInInfo = firebase
-      } else {
-        state.userSignInInfo = {}
       }
 
       if (token) {
@@ -39,12 +37,9 @@ export const mutations = {
 }
 
 export const actions = {
-  async ON_AUTH_STATE_CHANGED_ACTION({ commit, dispatch }, { authUser }) {
+  async ON_AUTH_STATE_CHANGED_ACTION({ commit }, { authUser }) {
     const token = authUser && (await authUser.getIdToken())
     commit('ON_AUTH_STATE_CHANGED_MUTATION', { authUser, token })
-    await dispatch('membership-subscribe/FETCH_BASIC_INFO', null, {
-      root: true,
-    })
   },
 }
 

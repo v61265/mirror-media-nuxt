@@ -4,21 +4,16 @@
     :class="{
       'subscribe-button__grey': color === 'grey',
       'subscribe-button__light': color === 'light',
-      disabled: isDisabled || isLoading,
+      disabled: isDisabled,
     }"
   >
-    <UiMembershipLoadingIcon v-if="isLoading" />
-    <span v-else>{{ title }}</span>
+    {{ title }}
     <p class="subcribe-button__hint">{{ hint }}</p>
   </div>
 </template>
 
 <script>
-import UiMembershipLoadingIcon from '~/components/UiMembershipLoadingIcon.vue'
 export default {
-  components: {
-    UiMembershipLoadingIcon,
-  },
   props: {
     title: {
       type: String,
@@ -34,10 +29,6 @@ export default {
       default: 'original',
     },
     isDisabled: {
-      type: Boolean,
-      default: false,
-    },
-    isLoading: {
       type: Boolean,
       default: false,
     },

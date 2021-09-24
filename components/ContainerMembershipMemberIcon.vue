@@ -12,8 +12,7 @@
         v-show="shouldShowDropdownMenu"
         class="logged-in-wrapper__dropdown-menu dropdown-menu"
       >
-        <a href="/profile" class="dropdown-menu__list">個人資料</a>
-        <a href="/profile/purchase" class="dropdown-menu__list">訂閱紀錄</a>
+        <a href="/profile" class="dropdown-menu__profile-link">個人資料</a>
         <button
           class="dropdown-menu__sign-out-button sign-out-button"
           @click="handleSignOutButtonClick"
@@ -112,15 +111,15 @@ export default {
   z-index: 99999;
   font-size: 13px;
   color: #888888;
-  &__list {
+  &__profile-link {
     width: 100%;
     padding: 24px 0;
     text-align: center;
-    border-bottom: 1px solid #d8d8d8;
   }
   &__sign-out-button {
     width: 100%;
-    padding: 24px 0;
+    padding: 10px 0;
+    border-top: 1px solid #d8d8d8;
   }
 }
 </style>

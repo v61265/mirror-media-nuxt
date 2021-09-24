@@ -1,6 +1,5 @@
 <template>
   <div class="sim">
-    由於付款紀錄頁已開始流程整合，本功能暫時關閉
     <div class="sim__input">
       <input
         v-model="simMembershipStatus"

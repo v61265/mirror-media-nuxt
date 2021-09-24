@@ -6,7 +6,7 @@
       <span>NT$ {{ perchasedPlan[0].newPrice }}</span>
     </div>
     <div class="perchase-info__row hint">
-      <span>{{ perchasedPlan[0].hint }}</span>
+      <span>每月 $49 元・信用卡自動續扣</span>
     </div>
 
     <div class="perchase-info__devider" />

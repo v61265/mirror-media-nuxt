@@ -8,10 +8,6 @@
       <div class="container container--form">
         <ContainerLoginForm
           :isFederatedRedirectResultLoading="isFederatedRedirectResultLoading"
-          :showHint="showHint"
-          :prevAuthMethod="prevAuthMethod"
-          @setShowHint="setShowHint"
-          @setPrevAuthMethod="setPrevAuthMethod"
           @registerSuccess="handleRegisterSuccess"
           @registerFail="handleRegisterFail"
           @loginSuccess="handleLoginSuccess"
@@ -63,14 +59,12 @@ import UiLoginIntro from '~/components/UiLoginIntro.vue'
 import ContainerLoginForm from '~/components/ContainerLoginForm.vue'
 import UiMembershipButtonSecondary from '~/components/UiMembershipButtonSecondary.vue'
 import UiMembershipLink from '~/components/UiMembershipLink.vue'
-import { createMemberProfile } from '~/apollo/mutations/userCreate.gql'
+import userCreate from '~/apollo/mutations/userCreate.gql'
 import loginDestination from '~/utils/login-destination'
-import { useMemberSubscribeMachine } from '~/xstate/member-subscribe/compositions'
-import { isMemberSubscribeFeatureToggled } from '~/xstate/member-subscribe/util'
 
 export default {
   apollo: {
-    $client: 'memberSubscription',
+    $client: 'userClient',
   },
   components: {
     UiMembershipLink,
@@ -79,19 +73,9 @@ export default {
     UiLoginIntro,
     ContainerLoginForm,
   },
-  middleware({ store, redirect, route }) {
-    if (isMemberSubscribeFeatureToggled(route)) {
-      return
-    }
+  middleware({ store, redirect }) {
     if (store.getters['membership/isLoggedIn']) {
       redirect('/section/member')
-    }
-  },
-  setup() {
-    const { state, send } = useMemberSubscribeMachine()
-    return {
-      stateMembershipSubscribe: state,
-      sendMembershipSubscribe: send,
     }
   },
   data() {
@@ -99,15 +83,12 @@ export default {
       state: 'form',
       registerSuccessTimerCount: 3,
       isFederatedRedirectResultLoading: true,
-      prevAuthMethod: '',
-      showHint: false,
     }
   },
   async beforeMount() {
     await loginDestination.set(this.$route)
     await this.handleFederatedRedirectResult()
   },
-
   methods: {
     async handleError({ type, email, error }) {
       // eslint-disable-next-line no-console
@@ -134,20 +115,14 @@ export default {
       const { email, uid } = user
       if (uid) {
         try {
-          return await this.$apollo.mutate({
-            mutation: createMemberProfile,
+          await this.$apollo.mutate({
+            mutation: userCreate,
             variables: {
               email,
+              firebaseId: uid,
             },
           })
         } catch (e) {
-          /*
-           * (TODO)
-           * when create member in israfel by gateway occurred an error
-           * we need to delete this member's firebase account
-           */
-          user.delete()
-
           await this.handleError({
             type: 'gatewayFailUserCreate',
             email,
@@ -160,24 +135,8 @@ export default {
 
     async handleRegisterSuccess(user) {
       try {
-        const { data } = await this.postCreateUserForRegister(user)
-        this.$store.commit(
-          'membership-subscribe/SET_BASIC_INFO',
-          data.createmember
-        )
-
-        if (isMemberSubscribeFeatureToggled(this.$route)) {
-          this.sendMembershipSubscribe({
-            type: '登入成功',
-            userData: {
-              firebase: this.$store.state.membership,
-              israfel: this.$store.state['membership-subscribe'],
-            },
-          })
-          this.sendMembershipSubscribe('自動跳轉')
-        } else {
-          this.showRegisterSuccessAndRedirectToSectionMember()
-        }
+        await this.postCreateUserForRegister(user)
+        this.showRegisterSuccessAndRedirectToSectionMember()
       } catch {
         this.state = 'registerError'
       }
@@ -187,23 +146,9 @@ export default {
       await this.handleError(error)
     },
     async handleLoginSuccess() {
-      if (isMemberSubscribeFeatureToggled(this.$route)) {
-        await this.$store.dispatch('membership-subscribe/FETCH_BASIC_INFO')
-        this.sendMembershipSubscribe({
-          type: '登入成功',
-          userData: {
-            firebase: this.$store.state.membership,
-            israfel: this.$store.state['membership-subscribe'],
-          },
-        })
-        this.sendMembershipSubscribe('自動跳轉')
-      } else {
-        await loginDestination.redirect()
-        await Promise.resolve()
-      }
+      await loginDestination.redirect()
     },
     async handleLoginFail(error) {
-      this.sendMembershipSubscribe('登入失敗')
       this.state = 'loginError'
       await this.handleError(error)
     },
@@ -219,51 +164,12 @@ export default {
         }
       } catch (e) {
         this.isFederatedRedirectResultLoading = false
-        console.log(e)
-
-        /*
-         * (3rd party auth error happends here)
-         * if login with Google or email/password before,
-         * and next time login with Facebook(same email as above)
-         * it'll cause error, e.code = auth/account-exists-with-different-credential
-         */
-        if (e.code === 'auth/account-exists-with-different-credential') {
-          const responseArray = await this.$fire.auth.fetchSignInMethodsForEmail(
-            e.email
-          )
-          const prevAuthMethod = responseArray?.[0]
-
-          switch (prevAuthMethod) {
-            case 'google.com':
-              this.prevAuthMethod = 'Google'
-              break
-            case 'facebook.com':
-              this.prevAuthMethod = 'Facebook'
-              break
-            case 'password':
-              this.prevAuthMethod = 'email'
-              break
-
-            default:
-              this.prevAuthMethod = prevAuthMethod
-              break
-          }
-          this.showHint = true
-        } else {
-          // handle other 3rd party auth error
-          await this.handleLoginFail({
-            type: 'signInFailFederated',
-            email: e.email,
-            error: e,
-          })
-        }
+        await this.handleLoginFail({
+          type: 'signInFailFederated',
+          email: e.email,
+          error: e,
+        })
       }
-    },
-    setShowHint(boolean) {
-      this.showHint = boolean
-    },
-    setPrevAuthMethod(method) {
-      this.prevAuthMethod = method
     },
   },
 }

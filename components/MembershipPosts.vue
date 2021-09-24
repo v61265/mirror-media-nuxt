@@ -14,15 +14,14 @@
         class="membership-post-list__form_row"
       >
         <div>
-          <!-- TODO: replace this mock href with real link if we finish data fetching -->
-          <a href="/premium/oscar-test?ms=true">{{ post.title }}</a>
+          <a :href="post.href">{{ post.title }}</a>
         </div>
         <div>{{ post.deadline }}</div>
       </div>
       <div
         v-if="showMorePostButton"
-        class="membership-post-list__form_row load-more"
         @click="$emit('load-more-post')"
+        class="membership-post-list__form_row load-more"
       >
         展開更多
         <img src="~/assets/arrow-down-default.svg" />

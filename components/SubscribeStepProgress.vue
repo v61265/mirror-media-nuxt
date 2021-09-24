@@ -45,31 +45,10 @@ export default {
         return 1
       },
     },
-    isUpgradeFromMonthToYear: {
-      type: Boolean,
-      default: false,
-    },
   },
   data() {
     return {
-      normalStepList: [
-        {
-          id: 0,
-          step: 1,
-          name: '方案選擇',
-        },
-        {
-          id: 1,
-          step: 2,
-          name: '確認訂購',
-        },
-        {
-          id: 2,
-          step: 3,
-          name: '付款完成',
-        },
-      ],
-      upgradeStepList: [
+      stepList: [
         {
           id: 0,
           step: 1,
@@ -87,13 +66,6 @@ export default {
         },
       ],
     }
-  },
-  computed: {
-    stepList() {
-      return this.isUpgradeFromMonthToYear
-        ? this.normalStepList
-        : this.upgradeStepList
-    },
   },
 }
 </script>

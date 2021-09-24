@@ -11,7 +11,7 @@
     </div>
     <div class="service-rule__agree">
       <label>
-        <input v-model="isChecked" type="checkbox" :checked="isChecked" />
+        <input type="checkbox" v-model="isChecked" :checked="isChecked" />
         <span>我同意以上條款</span>
       </label>
       <UiMembershipButtonPrimary
@@ -24,20 +24,14 @@
 </template>
 
 <script>
+import Cookie from 'vue-cookie'
 import UiMembershipButtonPrimary from '~/components/UiMembershipButtonPrimary.vue'
 import UiStoryContentHandler from '~/components/UiStoryContentHandler.vue'
-import { useMemberSubscribeMachine } from '~/xstate/member-subscribe/compositions'
+
 export default {
   components: {
     UiMembershipButtonPrimary,
     UiStoryContentHandler,
-  },
-  setup() {
-    const { state, send } = useMemberSubscribeMachine()
-    return {
-      stateMembershipSubscribe: state,
-      sendMembershipSubscribe: send,
-    }
   },
   async fetch() {
     const fetchPartnersAndTopicsData = async () => {
@@ -98,19 +92,11 @@ export default {
       }
       return { ...paragraph, content: newContent }
     },
-    async handleSubmit(e) {
+    handleSubmit(e) {
       e.preventDefault()
-      try {
-        // ======To Kevin Start=======
-        const updatedTos = await this.$setMemberServiceRuleStatusToTrue()
-        console.log(updatedTos)
-        // ======To Kevin End=======
-
-        localStorage.setItem('read-service-rule', 'true')
-        this.sendMembershipSubscribe('同意服務條款並繼續')
-      } catch (error) {
-        console.error(error)
-      }
+      Cookie.set('read-service-rule', true, { expires: 10 * 365 * 24 + 'h' })
+      const destination = this.$route.query.destination || '/'
+      window.location.replace(`/login?destination=${destination}`)
     },
   },
 }

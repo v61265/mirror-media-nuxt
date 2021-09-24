@@ -287,10 +287,6 @@ module.exports = {
       path: `/${API_PATH_FRONTEND}/membership/v1`,
       handler: '~/api/membership-proxy-v1.js',
     },
-    {
-      path: `/${API_PATH_FRONTEND}/member-subscription/v0`,
-      handler: '~/api/member-subscription-proxy.js',
-    },
     { path: `/${API_PATH_FRONTEND}`, handler: '~/api/index.js' },
   ],
 
@@ -480,7 +476,6 @@ module.exports = {
         browserHttpEndpoint: '/api/v2/membership/v1/graphql',
       },
       userClient: '~/apollo-config-user-client.js',
-      memberSubscription: '~/apollo-config-member-subscription.js',
     },
   },
 
